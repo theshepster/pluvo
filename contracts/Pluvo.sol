@@ -300,10 +300,14 @@ contract Pluvo is EIP20Interface {
     function calculateEvaporation(address _addr) public view returns (uint256) {
         uint256 elapsedBlocks = block.number - balances[_addr].lastEvaporationBlock;
         //return balances[_addr].amount * (1 - (1 - evaporationRate / EVAPORATION_DEMONINATOR)**elapsedBlocks);
-        uint256 k = balances[_addr].amount;
+        uint256 amt = balances[_addr].amount;
         uint256 q = EVAPORATION_DEMONINATOR / evaporationRate;
         uint256 precision = 8; // higher precision costs more gas
-        return k - fractionalExponentiation(k, q, elapsedBlocks, true, precision);
+        uint256 maxEvaporation = amt - fractionalExponentiation(amt, q, elapsedBlocks, true, precision);
+        if (maxEvaporation > amt)
+            return amt;
+        else
+            return maxEvaporation;
     }
     
     /// @notice Evaporate coins for a given address.
