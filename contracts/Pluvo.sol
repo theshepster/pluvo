@@ -151,9 +151,10 @@ contract Pluvo is EIP20Interface {
     
     /*--------- Pluvo Variables ---------*/
 
-    // authorized recipients of rain, mapping from address to lastRainfall number
+    // authorized recipients of rain, mapping from address to last rainfall collected
     mapping (address => uint256) public rainees;
     
+    // used to store the amount and block number for each rainfall
     struct Rain {
         uint256 amount;
         uint256 block;
@@ -182,7 +183,8 @@ contract Pluvo is EIP20Interface {
 
     /*--------- Pluvo functions ---------*/
     
-    /// @notice Counts the number of past rainfalls and returns that value.
+    /// @notice Counts 1 more than the number of past rainfalls. This is because the rainfallPayouts array is seeded with a (0, block.number) value in the constructor.
+    /// @notice That is, this returns the index of the rainfall that is about to occur next. For example, a return value of 2 indicates that the next rainfall will be the second rainfall ever.
     /// @return Number of past rainfalls.
     function currentRainfallIndex() public view returns (uint256) {
         return rainfallPayouts.length;
@@ -212,12 +214,14 @@ contract Pluvo is EIP20Interface {
     
     // TODO: Create API for authorization, so that not any message sender can activate this.
     /// @notice Register an address as an available rainee.
+    /// @notice This function causes a rainfall before registration, if enough time has elapsed.
     /// @notice Note that this does not yet check for authorization.
     /// @param _rainee The address to register
     /// @return True if the address was registered, false if the address was already registered
     function registerAddress(address _rainee) public returns (bool success) {
         if (rainees[_rainee] == 0) {
-            rainees[_rainee] = currentRainfallIndex() + 1;
+            rain(); // rain first, if enough time has elapsed
+            rainees[_rainee] = currentRainfallIndex();
             numberOfRainees++;
             return true;
         }
@@ -226,11 +230,13 @@ contract Pluvo is EIP20Interface {
     
     // TODO: Create API for authorization, so that not any message sender can activate this.
     /// @notice Unregister an address, making it no longer an available rainee.
+    /// @notice This function causes a rainfall before unregistration, if enough time has elapsed.
     /// @notice Note that this does not yet check for authorization.
     /// @param _rainee The address to unregister
     /// @return True if the address was unregistered, false if the address was already unregistered
     function unregisterAddress(address _rainee) public returns (bool success) {
         if (rainees[_rainee] > 0) {
+            rain(); // rain first, if enough time has elapsed
             delete rainees[_rainee];
             numberOfRainees--;
             return true;
@@ -245,53 +251,60 @@ contract Pluvo is EIP20Interface {
     function collect() public returns (uint256 fundsCollected) {
         // ensure message sender is authorized
         require(rainees[msg.sender] > 0);
+
+        // rain, if necessary
+        rain(); // rain() only rains if enough time has elapsed
         
-        uint256 lastRainfallOfSender = rainees[msg.sender];
+        // ensure there is rain to be collected by the user
+        uint256 currentRainfallOfSender = rainees[msg.sender];
         uint256 currentRainfall = currentRainfallIndex();
-    
+        require(currentRainfall > currentRainfallOfSender);
+
+        // calculate amount available to collect
+        for (uint256 i = currentRainfallOfSender; i < currentRainfall; i++)
+            fundsCollected += rainfallPayouts[i].amount;
+
         // evaporate from message sender
         // if current balance is zero, this updates the address's 
-        //lastEvaporationBlock to the current block number
+        // lastEvaporationBlock to the current block number
         evaporate(msg.sender);
         
-        // calculate amount available to collect
-        uint256 value;
-        for (uint256 i = lastRainfallOfSender - 1; i < currentRainfall; i++)
-            value += rainfallPayouts[i].amount;
-        
         // pay collection to recipient
-        balances[msg.sender].amount += value;
+        balances[msg.sender].amount += fundsCollected;
         
-        // update recipient's last collection index
+        // update recipient's last rainfall collection index
         rainees[msg.sender] = currentRainfall;
-        
-        return value;
+
+        // implied: return fundsCollected;
     }
     
     /// @notice Store rainfall payout.
     /// @return True if enough time had elapsed since last rainfall.
-    function rain() public returns (bool success) {
+    function rain() public {
         // note that rainfallPayouts[currentRainfallIndex() - 1] is guaranteed
         // to return a value because the rainfallPayouts array was seeded with
         // a Rain struct in the contract constructor
         uint256 lastRainBlock = rainfallPayouts[currentRainfallIndex() - 1].block;
         uint256 elapsedBlocks = block.number - lastRainBlock;
         
-        // rain if enough time has elapsed
-        if (elapsedBlocks >= blocksBetweenRainfalls) {
+        // rain if enough time has elapsed and there are rainees
+        if (elapsedBlocks >= blocksBetweenRainfalls && numberOfRainees > 0) {
             // determine rainfall total
             uint256 totalRain = rainfallPerBlock() * elapsedBlocks;
+
+            // determine checkpoint
+            uint256 checkpoint = lastRainBlock + blocksBetweenRainfalls;
             
             // store per-person rainfall amount
-            rainfallPayouts.push(Rain(totalRain/numberOfRainees, block.number));
+            // note that this does not store the current block number, but rather the lastRainBlock plus the number of blocks between rainfalls (i.e., the checkpoint). This is safe, because it is guaranteed that the number of rainees in the current block is equal to the number of rainees that existed at the checkpoint. This guarantee exists because rain is forced in the registerAddress() and unregisterAddress() functions.
+            rainfallPayouts.push(Rain(totalRain/numberOfRainees, checkpoint));
             
             // update total supply
             totalSupply += totalRain;
             
-            return true;
+            // rain again, if necessary
+            rain();
         }
-        
-        return false;
     }
     
     /// @notice Calculates evaporation amount for a given address, without evaporating.
