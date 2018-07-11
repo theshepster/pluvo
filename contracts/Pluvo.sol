@@ -1,53 +1,55 @@
 pragma solidity ^0.4.24;
 
+import 'openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
+
 // Abstract contract for the full ERC 20 Token standard
-contract EIP20Interface {
-    /* This is a slight change to the ERC20 base standard.
-    function totalSupply() constant returns (uint256 supply);
-    is replaced with:
-    uint256 public totalSupply;
-    This automatically creates a getter function for the totalSupply.
-    This is moved to the base contract since public getter functions are not
-    currently recognised as an implementation of the matching abstract
-    function by the compiler.
-    */
-    /// total amount of tokens
-    uint256 public totalSupply;
+// contract EIP20Interface {
+//     /* This is a slight change to the ERC20 base standard.
+//     function totalSupply() constant returns (uint256 supply);
+//     is replaced with:
+//     uint256 public totalSupply;
+//     This automatically creates a getter function for the totalSupply.
+//     This is moved to the base contract since public getter functions are not
+//     currently recognised as an implementation of the matching abstract
+//     function by the compiler.
+//     */
+//     /// total amount of tokens
+//     uint256 public totalSupply;
 
-    /// @param _owner The address from which the balance will be retrieved
-    /// @return The balance
-    function balanceOf(address _owner) public view returns (uint256 balance);
+//     /// @param _owner The address from which the balance will be retrieved
+//     /// @return The balance
+//     function balanceOf(address _owner) public view returns (uint256 balance);
 
-    /// @notice send `_value` token to `_to` from `msg.sender`
-    /// @param _to The address of the recipient
-    /// @param _value The amount of token to be transferred
-    /// @return Whether the transfer was successful or not
-    function transfer(address _to, uint256 _value) public returns (bool success);
+//     /// @notice send `_value` token to `_to` from `msg.sender`
+//     /// @param _to The address of the recipient
+//     /// @param _value The amount of token to be transferred
+//     /// @return Whether the transfer was successful or not
+//     function transfer(address _to, uint256 _value) public returns (bool success);
 
-    /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
-    /// @param _from The address of the sender
-    /// @param _to The address of the recipient
-    /// @param _value The amount of token to be transferred
-    /// @return Whether the transfer was successful or not
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
+//     /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
+//     /// @param _from The address of the sender
+//     /// @param _to The address of the recipient
+//     /// @param _value The amount of token to be transferred
+//     /// @return Whether the transfer was successful or not
+//     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
 
-    /// @notice `msg.sender` approves `_spender` to spend `_value` tokens
-    /// @param _spender The address of the account able to transfer the tokens
-    /// @param _value The amount of tokens to be approved for transfer
-    /// @return Whether the approval was successful or not
-    function approve(address _spender, uint256 _value) public returns (bool success);
+//     /// @notice `msg.sender` approves `_spender` to spend `_value` tokens
+//     /// @param _spender The address of the account able to transfer the tokens
+//     /// @param _value The amount of tokens to be approved for transfer
+//     /// @return Whether the approval was successful or not
+//     function approve(address _spender, uint256 _value) public returns (bool success);
 
-    /// @param _owner The address of the account owning tokens
-    /// @param _spender The address of the account able to transfer the tokens
-    /// @return Amount of remaining tokens allowed to spent
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining);
+//     /// @param _owner The address of the account owning tokens
+//     /// @param _spender The address of the account able to transfer the tokens
+//     /// @return Amount of remaining tokens allowed to spent
+//     function allowance(address _owner, address _spender) public view returns (uint256 remaining);
 
-    // solhint-disable-next-line no-simple-event-func-name
-    event Transfer(address indexed _from, address indexed _to, uint256 _value);
-    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
-}
+//     // solhint-disable-next-line no-simple-event-func-name
+//     event Transfer(address indexed _from, address indexed _to, uint256 _value);
+//     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+// }
 
-contract Pluvo is EIP20Interface {
+contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     /*--------- CONSTANTS ---------*/
     
@@ -62,15 +64,25 @@ contract Pluvo is EIP20Interface {
     
     mapping (address => Balance) public balances;
     mapping (address => mapping (address => uint256)) public allowed;
-
+    
+    /// total amount of tokens
+    uint256 public totalSupply;
+    
     // The following variables are optional in ERC20
-    string public name;
-    uint8 public decimals;
-    string public symbol;
+    // TODO: These are declared in openzeppelin DetailedERC20 and can be removed
+    // string public name;
+    // uint8 public decimals;
+    // string public symbol;
     
     
     /*--------- ERC20 Functions ---------*/
     
+    // @notice Return the total supply
+    /// @return total supply
+    function totalSupply() public view returns (uint256) {
+        return totalSupply;
+    }
+
     /// @notice send `_value` token to `_to` from `msg.sender`
     /// @notice first, the message sender's balance falls by amount evaporated since last transfer
     /// @param _to The address of the recipient
@@ -349,10 +361,10 @@ contract Pluvo is EIP20Interface {
         totalSupply = 0; // initialize to 0; supply will grow due to rain
         maxSupply = 10e12; // 12**24 would be better
         numberOfRainees = 0;
-        name = "Pluvo";
-        decimals = 18;
-        symbol = "PLV";
-        evaporationRate = 12**4; // 4.266%/year evaporation @ 15 second block intervals
+        // name = "Pluvo"; // TODO: REMOVE THIS LINE
+        // decimals = 18; // TODO: REMOVE THIS LINE
+        // symbol = "PLV"; // TODO: REMOVE THIS LINE
+        evaporationRate = 12**6; // 12**4 would be 4.266%/year evaporation @ 15 second block intervals
         blocksBetweenRainfalls = 1; // 40320 would be 7 days @ 15 second block intervals
         rainfallPayouts.push(Rain(0, block.number));
     }
