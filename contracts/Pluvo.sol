@@ -350,7 +350,7 @@ contract Pluvo is EIP20Interface {
         maxSupply = 10e12; // 12**24 would be better
         numberOfRainees = 0;
         name = "Pluvo";
-        decimals = 12;
+        decimals = 18;
         symbol = "PLV";
         evaporationRate = 12**4; // 4.266%/year evaporation @ 15 second block intervals
         blocksBetweenRainfalls = 1; // 40320 would be 7 days @ 15 second block intervals

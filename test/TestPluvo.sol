@@ -17,6 +17,6 @@ contract TestPluvo {
     }
 
     function testDecimals() public {
-        Assert.equal(uint(pluvo.decimals()), uint(12), "Decimals should be 12");
+        Assert.equal(uint(pluvo.decimals()), uint(18), "Decimals should be 18");
     }
 }
