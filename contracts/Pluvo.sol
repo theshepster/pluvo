@@ -202,10 +202,16 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         return rainfallPayouts.length;
     }
     
-    /// @notice Determine the total amount of rain per block.
-    /// @return Total rainfall per block.
-    function rainfallPerBlock() public view returns (uint256) {
-        return maxSupply * evaporationRate / EVAPORATION_DEMONINATOR;
+    /// @notice Determine the total amount of rainfall due to each recipient in the next rainfall.
+    /// @return Total rainfall due in a rainfall to each registered address.
+    function rainPerRainfallPerPerson() public view returns (uint256) {
+        require(numberOfRainees > 0);
+        return 
+            maxSupply *
+            blocksBetweenRainfalls * 
+            evaporationRate /
+            EVAPORATION_DEMONINATOR /
+            numberOfRainees;
     }
     
     /// @notice Set the evaporation rate, in coins per block per trillion coins.
@@ -290,32 +296,25 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // implied: return fundsCollected;
     }
     
-    /// @notice Store rainfall payout.
+    /// @notice Store rainfall payout(s) due since last rainfall.
+    /// @notice If multiple rainfalls should have occurred, store the rain from each of them.
     /// @return True if enough time had elapsed since last rainfall.
     function rain() public {
-        // note that rainfallPayouts[currentRainfallIndex() - 1] is guaranteed
-        // to return a value because the rainfallPayouts array was seeded with
-        // a Rain struct in the contract constructor
-        uint256 lastRainBlock = rainfallPayouts[currentRainfallIndex() - 1].block;
-        uint256 elapsedBlocks = block.number - lastRainBlock;
-        
-        // rain if enough time has elapsed and there are rainees
-        if (elapsedBlocks >= blocksBetweenRainfalls && numberOfRainees > 0) {
-            // determine rainfall total
-            uint256 totalRain = rainfallPerBlock() * elapsedBlocks;
-
-            // determine checkpoint
-            uint256 checkpoint = lastRainBlock + blocksBetweenRainfalls;
-            
-            // store per-person rainfall amount
-            // note that this does not store the current block number, but rather the lastRainBlock plus the number of blocks between rainfalls (i.e., the checkpoint). This is safe, because it is guaranteed that the number of rainees in the current block is equal to the number of rainees that existed at the checkpoint. This guarantee exists because rain is forced in the registerAddress() and unregisterAddress() functions.
-            rainfallPayouts.push(Rain(totalRain/numberOfRainees, checkpoint));
-            
-            // update total supply
-            totalSupply += totalRain;
-            
-            // rain again, if necessary
-            rain();
+        if (numberOfRainees > 0) {
+            // note that rainfallPayouts[currentRainfallIndex() - 1] is guaranteed
+            // to return a value because the rainfallPayouts array was seeded with
+            // a Rain struct in the contract constructor
+            uint256 lastRainBlock = rainfallPayouts[currentRainfallIndex() - 1].block;
+            uint256 rainfallsDue = (block.number - lastRainBlock) / blocksBetweenRainfalls;
+    
+            // store per-person rainfall amount 
+            // also note that, due to integer division, lastRainBlock + (blocksBetweenRainfalls * rainfallsDue) is not necessarily equal to block.number 
+            if (rainfallsDue > 0) {
+                rainfallPayouts.push(Rain(rainPerRainfallPerPerson() * rainfallsDue, lastRainBlock + (blocksBetweenRainfalls * rainfallsDue)));
+                
+                // update total supply
+                totalSupply += rainPerRainfallPerPerson() * rainfallsDue * numberOfRainees;
+            }
         }
     }
     
