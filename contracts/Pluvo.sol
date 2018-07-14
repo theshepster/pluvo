@@ -178,7 +178,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     // evaporationRate coins per denominator evaporate per block
     uint256 public evaporationRate; 
-    uint256 constant private EVAPORATION_DEMONINATOR;
+    uint256 private evaporation_denominator;
     
     /* number of blocks between rainfall payouts
      * this state variable exists to lessen number of contract calls that happen
@@ -210,7 +210,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             maxSupply *
             blocksBetweenRainfalls * 
             evaporationRate /
-            EVAPORATION_DEMONINATOR /
+            evaporation_denominator /
             numberOfRainees;
     }
     
@@ -323,9 +323,9 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @param _addr address from which to calcuate evaporation
     function calculateEvaporation(address _addr) public view returns (uint256) {
         uint256 elapsedBlocks = block.number - balances[_addr].lastEvaporationBlock;
-        //return balances[_addr].amount * (1 - (1 - evaporationRate / EVAPORATION_DEMONINATOR)**elapsedBlocks);
+        //return balances[_addr].amount * (1 - (1 - evaporationRate / evaporation_denominator)**elapsedBlocks);
         uint256 amt = balances[_addr].amount;
-        uint256 q = EVAPORATION_DEMONINATOR / evaporationRate;
+        uint256 q = evaporation_denominator / evaporationRate;
         uint256 precision = 8; // higher precision costs more gas
         uint256 maxEvaporation = amt - fractionalExponentiation(amt, q, elapsedBlocks, true, precision);
         if (maxEvaporation > amt)
@@ -364,7 +364,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // decimals = 18; // TODO: REMOVE THIS LINE
         // symbol = "PLV"; // TODO: REMOVE THIS LINE
         evaporationRate = 25; // 12**4 would be 4.266%/year evaporation @ 15 second block intervals with a denominator of 10**12
-        EVAPORATION_DEMONINATOR = 100;
+        evaporation_denominator = 100;
         blocksBetweenRainfalls = 1; // 40320 would be 7 days @ 15 second block intervals
         rainfallPayouts.push(Rain(0, block.number));
     }
