@@ -1,4 +1,5 @@
 pragma solidity ^0.4.24;
+pragma experimental "v0.5.0";
 
 import 'openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
 
@@ -175,10 +176,9 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     // stores payout amount and block number for each rainfall
     Rain[] public rainfallPayouts;
     
-    // integer number representing coins evaporated per trillion coins per block
+    // evaporationRate coins per denominator evaporate per block
     uint256 public evaporationRate; 
-    uint256 constant private EVAPORATION_DEMONINATOR = 1e12;
-
+    uint256 constant private EVAPORATION_DEMONINATOR;
     
     /* number of blocks between rainfall payouts
      * this state variable exists to lessen number of contract calls that happen
@@ -363,7 +363,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // name = "Pluvo"; // TODO: REMOVE THIS LINE
         // decimals = 18; // TODO: REMOVE THIS LINE
         // symbol = "PLV"; // TODO: REMOVE THIS LINE
-        evaporationRate = 12**6; // 12**4 would be 4.266%/year evaporation @ 15 second block intervals
+        evaporationRate = 25; // 12**4 would be 4.266%/year evaporation @ 15 second block intervals with a denominator of 10**12
+        EVAPORATION_DEMONINATOR = 100;
         blocksBetweenRainfalls = 1; // 40320 would be 7 days @ 15 second block intervals
         rainfallPayouts.push(Rain(0, block.number));
     }
