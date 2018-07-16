@@ -1,33 +1,45 @@
-//import assertRevert from 'openzeppelin-solidity/test/helpers/assertRevert.js';
+import assertRevert from 'openzeppelin-solidity/test/helpers/assertRevert.js';
 const Pluvo = artifacts.require("./Pluvo.sol");
 
-contract('Pluvo', function ([_, owner, recipient, anotherAccount]) {
-
-  beforeEach(async () => {
-    pluvo = await Pluvo.deployed();
+contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
+  
+  /*
+   * These statements create state to be shared between tests.
+   * TODO: Consider whether these should go in a "before()" function.
+   */
+  pluvo = await Pluvo.deployed();
+  const supply0 = await pluvo.totalSupply.call();
+  await pluvo.registerAddress(owner);
+  const ownerBalance0 = await pluvo.balanceOf(owner);
+  await pluvo.rain();
+  const supply1 = await.pluvo.totalSupply.call();
+  await pluvo.collect({ from: owner });
+  const ownerBalance1 = await pluvo.balanceOf(owner);
+  const supply2 = await.pluvo.totalSupply.call();
+  await pluvo.transfer(recipient, 1, { from: owner });
+  const supply3 = await pluvo.totalSupply.call();
+  
+  /*
+   * Fill this in to get a clean slate before each test
+  beforeEach(async () => {  
   });
+  */
 
-  describe('totalSupply()', () => {
-    it('should equal zero at construction', async () => {
-      const totalSupply = await pluvo.totalSupply();
-
-      assert.equal(totalSupply, 0);
+  describe('totalSupply()', () => { 
+    it('should equal zero at construction', () => {
+      assert.equal(supply0, 0);
     });
 
-    it('should increase after rain', async () => {
-        assert(false, 'not implemented');
-    });
-
-    it('should stay the same after evaporation', async () => {
-        assert(false, 'not implemented');
-    });
-
-    it('should stay the same after collection', async () => {
-        assert(false, 'not implemented');
+    it('should increase after rain', () => {
+      assert.isAbove(supply1, supply0);
     });
 
     it('should stay the same after transfer', async () => {
-        assert(false, 'not implemented');
+      assert.equal(supply2, supply3);
+    });
+
+    it('should stay the same after collection', () => {
+        assert.equal(supply1, supply2);
     });
   });
 
@@ -38,27 +50,34 @@ contract('Pluvo', function ([_, owner, recipient, anotherAccount]) {
     });
 
     it('should be positive for an address with coins', async () => {
-        assert(false, 'not implemented');
+        const balance = await pluvo.balanceOf(owner);
+        assert.isAbove(balance, 0);
     });
 
     it('should increase after receipt', async () => {
-        assert(false, 'not implemented');
+        const balance = await pluvo.balanceOf(recipient);
+        assert.isAbove(balance, 0);
     });
 
     it('should decrease after sending coins', async () => {
-        assert(false, 'not implemented');
+        const balance = await pluvo.balanceOf(owner);
+        assert.isBelow(balance, ownerBalance1);
     });
 
-    it('should increase after rain collection', async () => {
-        assert(false, 'not implemented');
+    it('should increase after rain collection', () => {
+        assert.equal(ownerBalance0, ownerBalance1);
     });
 
-    it('should decrease between successive blocks', async () => {
+    it('should decrease between successive blocks', () => {
+        // TODO: SIMULATE PASSAGE OF TIME
         assert(false, 'not implemented');
     });
 
     it('should incorporate pending evaporation', async () => {
-        assert(false, 'not implemented');
+        const pendingEvaporation = await pluvo.calculateEvaporation.call(owner);
+        const ownerBalance = await.pluvo.balanceOf.call(owner);
+        const ownerRawBalance = await.pluvo.balance.call(owner);
+        assert.equal(ownerRawBalance, ownerBalance - pendingEvaporation);
     });
   });
   
