@@ -3,53 +3,6 @@ pragma experimental "v0.5.0";
 
 import 'openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
 
-// Abstract contract for the full ERC 20 Token standard
-// contract EIP20Interface {
-//     /* This is a slight change to the ERC20 base standard.
-//     function totalSupply() constant returns (uint256 supply);
-//     is replaced with:
-//     uint256 public totalSupply;
-//     This automatically creates a getter function for the totalSupply.
-//     This is moved to the base contract since public getter functions are not
-//     currently recognised as an implementation of the matching abstract
-//     function by the compiler.
-//     */
-//     /// total amount of tokens
-//     uint256 public totalSupply;
-
-//     /// @param _owner The address from which the balance will be retrieved
-//     /// @return The balance
-//     function balanceOf(address _owner) public view returns (uint256 balance);
-
-//     /// @notice send `_value` token to `_to` from `msg.sender`
-//     /// @param _to The address of the recipient
-//     /// @param _value The amount of token to be transferred
-//     /// @return Whether the transfer was successful or not
-//     function transfer(address _to, uint256 _value) public returns (bool success);
-
-//     /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
-//     /// @param _from The address of the sender
-//     /// @param _to The address of the recipient
-//     /// @param _value The amount of token to be transferred
-//     /// @return Whether the transfer was successful or not
-//     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
-
-//     /// @notice `msg.sender` approves `_spender` to spend `_value` tokens
-//     /// @param _spender The address of the account able to transfer the tokens
-//     /// @param _value The amount of tokens to be approved for transfer
-//     /// @return Whether the approval was successful or not
-//     function approve(address _spender, uint256 _value) public returns (bool success);
-
-//     /// @param _owner The address of the account owning tokens
-//     /// @param _spender The address of the account able to transfer the tokens
-//     /// @return Amount of remaining tokens allowed to spent
-//     function allowance(address _owner, address _spender) public view returns (uint256 remaining);
-
-//     // solhint-disable-next-line no-simple-event-func-name
-//     event Transfer(address indexed _from, address indexed _to, uint256 _value);
-//     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
-// }
-
 contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     /*--------- CONSTANTS ---------*/
@@ -68,13 +21,6 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     /// total amount of tokens
     uint256 public totalSupply;
-    
-    // The following variables are optional in ERC20
-    // TODO: These are declared in openzeppelin DetailedERC20 and can be removed
-    // string public name;
-    // uint8 public decimals;
-    // string public symbol;
-    
     
     /*--------- ERC20 Functions ---------*/
     
@@ -323,7 +269,6 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @param _addr address from which to calcuate evaporation
     function calculateEvaporation(address _addr) public view returns (uint256) {
         uint256 elapsedBlocks = block.number - balances[_addr].lastEvaporationBlock;
-        //return balances[_addr].amount * (1 - (1 - evaporationRate / evaporation_denominator)**elapsedBlocks);
         uint256 amt = balances[_addr].amount;
         uint256 q = evaporation_denominator / evaporationRate;
         uint256 precision = 8; // higher precision costs more gas
@@ -360,9 +305,6 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         totalSupply = 0; // initialize to 0; supply will grow due to rain
         maxSupply = 10e12; // 12**24 would be better
         numberOfRainees = 0;
-        // name = "Pluvo"; // TODO: REMOVE THIS LINE
-        // decimals = 18; // TODO: REMOVE THIS LINE
-        // symbol = "PLV"; // TODO: REMOVE THIS LINE
         evaporationRate = 25; // 12**4 would be 4.266%/year evaporation @ 15 second block intervals with a denominator of 10**12
         evaporation_denominator = 100;
         blocksBetweenRainfalls = 1; // 40320 would be 7 days @ 15 second block intervals
@@ -398,7 +340,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     }
     
     // TODO: DELETE THIS FOR PRODUCTION
-    function blockNumber() public view returns (uint256){
+    function blockNumber() public view returns (uint256) {
         return block.number;
     }
     
