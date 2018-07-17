@@ -24,7 +24,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     /*--------- ERC20 Functions ---------*/
     
-    // @notice Return the total supply
+    //// @notice Return the total supply
     /// @return total supply
     function totalSupply() public view returns (uint256) {
         return totalSupply;
@@ -303,7 +303,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     constructor () public {
         totalSupply = 0; // initialize to 0; supply will grow due to rain
-        maxSupply = 10e12; // 12**24 would be better
+        maxSupply = 1000; // 12**24 would be better
         numberOfRainees = 0;
         evaporationRate = 25; // 12**4 would be 4.266%/year evaporation @ 15 second block intervals with a denominator of 10**12
         evaporation_denominator = 100;
@@ -343,5 +343,4 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     function blockNumber() public view returns (uint256) {
         return block.number;
     }
-    
 }

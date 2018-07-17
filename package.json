@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/theshepster/pluvo#readme",
   "dependencies": {
+    "bignumber.js": "^7.2.1",
     "openzeppelin-solidity": "1.10.0"
   }
 }
