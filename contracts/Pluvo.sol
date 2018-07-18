@@ -21,6 +21,26 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     /// total amount of tokens
     uint256 public totalSupply;
+
+    /*--------- Contract Constructor ---------*/
+    
+    constructor (
+        uint256 _maxSupply,
+        uint256 _evaporationRate,
+        uint256 _evaporationDenominator,
+        uint256 _blocksBetweenRainfalls
+    ) public {
+        require(_evaporationDenominator >= _evaporationRate);
+        require(_evaporationDenominator > 0);
+        require(_maxSupply > 0);
+        totalSupply = 0; // initialize to 0; supply will grow due to rain
+        numberOfRainees = 0;  // initialize to 0; no one has registered yet
+        maxSupply = _maxSupply;
+        evaporationRate = _evaporationRate;
+        evaporationDenominator = _evaporationDenominator;
+        blocksBetweenRainfalls = _blocksBetweenRainfalls;
+        rainfallPayouts.push(Rain(0, block.number));
+    }
     
     /*--------- ERC20 Functions ---------*/
     
@@ -124,7 +144,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     // evaporationRate coins per denominator evaporate per block
     uint256 public evaporationRate; 
-    uint256 private evaporation_denominator;
+    uint256 private evaporationDenominator;
     
     /* number of blocks between rainfall payouts
      * this state variable exists to lessen number of contract calls that happen
@@ -156,7 +176,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             maxSupply *
             blocksBetweenRainfalls * 
             evaporationRate /
-            evaporation_denominator /
+            evaporationDenominator /
             numberOfRainees;
     }
     
@@ -270,7 +290,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     function calculateEvaporation(address _addr) public view returns (uint256) {
         uint256 elapsedBlocks = block.number - balances[_addr].lastEvaporationBlock;
         uint256 amt = balances[_addr].amount;
-        uint256 q = evaporation_denominator / evaporationRate;
+        uint256 q = evaporationDenominator / evaporationRate;
         uint256 precision = 8; // higher precision costs more gas
         uint256 maxEvaporation = amt - fractionalExponentiation(amt, q, elapsedBlocks, true, precision);
         if (maxEvaporation > amt)
@@ -296,19 +316,6 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
                 balances[_addr].lastEvaporationBlock = block.number; // update to current block
             }
         }
-    }
-    
-    
-    /*--------- Contract Constructor ---------*/
-    
-    constructor () public {
-        totalSupply = 0; // initialize to 0; supply will grow due to rain
-        maxSupply = 1000; // 12**24 would be better
-        numberOfRainees = 0;
-        evaporationRate = 25; // 12**4 would be 4.266%/year evaporation @ 15 second block intervals with a denominator of 10**12
-        evaporation_denominator = 100;
-        blocksBetweenRainfalls = 1; // 40320 would be 7 days @ 15 second block intervals
-        rainfallPayouts.push(Rain(0, block.number));
     }
     
     
