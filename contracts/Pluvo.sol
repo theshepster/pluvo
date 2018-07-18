@@ -144,7 +144,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     // evaporationRate coins per denominator evaporate per block
     uint256 public evaporationRate; 
-    uint256 private evaporationDenominator;
+    uint256 public evaporationDenominator;
     
     /* number of blocks between rainfall payouts
      * this state variable exists to lessen number of contract calls that happen
@@ -180,11 +180,17 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             numberOfRainees;
     }
     
-    /// @notice Set the evaporation rate, in coins per block per trillion coins.
+    /// @notice Set the evaporation rate numerator and denominator.
     /// @return True if evaporation rate was updated; false otherwise.
     /// TODO: Enable authorization so only contract owner (or via proper governance) can update.
-    function setEvaporationRate(uint256 newEvaporationRate) public returns (bool success) {
-        evaporationRate = newEvaporationRate;
+    function setEvaporationRate(
+        uint256 _evaporationRate,
+        uint256 _evaporationDenominator
+    ) public returns (bool success) {
+        require(_evaporationDenominator >= _evaporationRate);
+        require(_evaporationDenominator > 0);
+        evaporationRate = _evaporationRate;
+        evaporationDenominator = _evaporationDenominator;
         return true;
     }
     
