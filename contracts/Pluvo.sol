@@ -136,7 +136,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     // used to store the amount and block number for each rainfall
     struct Rain {
         uint256 amount;
-        uint256 block;
+        uint256 rainBlock;
     }
     
     // stores payout amount and block number for each rainfall
@@ -245,8 +245,12 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         require(currentRainfall > currentRainfallOfSender);
 
         // calculate amount available to collect
-        for (uint256 i = currentRainfallOfSender; i < currentRainfall; i++)
-            fundsCollected += rainfallPayouts[i].amount;
+        // subtract evaporation before collection
+        for (uint256 i = currentRainfallOfSender; i < currentRainfall; i++) {
+            uint256 amt = rainfallPayouts[i].amount;
+            uint256 blk = rainfallPayouts[i].rainBlock;
+            fundsCollected += amt - calculateEvaporation(amt, blk);
+        }
 
         // evaporate from message sender
         // if current balance is zero, this updates the address's 
@@ -259,6 +263,9 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // update recipient's last rainfall collection index
         rainees[msg.sender] = currentRainfall;
 
+        // update total supply
+        totalSupply += fundsCollected;
+
         // implied: return fundsCollected;
     }
     
@@ -270,34 +277,46 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             // note that rainfallPayouts[currentRainfallIndex() - 1] is guaranteed
             // to return a value because the rainfallPayouts array was seeded with
             // a Rain struct in the contract constructor
-            uint256 lastRainBlock = rainfallPayouts[currentRainfallIndex() - 1].block;
+            uint256 lastRainBlock = rainfallPayouts[currentRainfallIndex() - 1].rainBlock;
             uint256 rainfallsDue = (block.number - lastRainBlock) / blocksBetweenRainfalls;
     
             // store per-person rainfall amount 
             // also note that, due to integer division, lastRainBlock + (blocksBetweenRainfalls * rainfallsDue) is not necessarily equal to block.number 
             if (rainfallsDue > 0) {
                 rainfallPayouts.push(Rain(rainPerRainfallPerPerson() * rainfallsDue, lastRainBlock + (blocksBetweenRainfalls * rainfallsDue)));
-                
-                // update total supply
-                totalSupply += rainPerRainfallPerPerson() * rainfallsDue * numberOfRainees;
             }
         }
     }
     
+    /// @notice Calculates evaporation amount for a given balance and block number, without evaporating.
+    /// @notice chain-weights the per-block evaporation rate so evaporation will not be > 100%
+    /// @param balance amount of coins to evaporate
+    /// @param lastBlock last block when evaporation occurred
+    function calculateEvaporation(
+        uint256 balance, 
+        uint256 lastBlock
+    ) public view returns (uint256) {
+        require(block.number >= lastBlock);
+        uint256 elapsedBlocks = block.number - lastBlock;
+        uint256 q = evaporationDenominator / evaporationRate;
+        uint256 precision = 8; // higher precision costs more gas
+        uint256 maxEvaporation = balance - fractionalExponentiation(balance, q, elapsedBlocks, true, precision);
+        if (maxEvaporation > balance)
+            return balance;
+        else
+            return maxEvaporation;
+    }
+
     /// @notice Calculates evaporation amount for a given address, without evaporating.
     /// @notice chain-weights the per-block evaporation rate so evaporation will not be > 100%
     /// @param _addr address from which to calcuate evaporation
     function calculateEvaporation(address _addr) public view returns (uint256) {
-        uint256 elapsedBlocks = block.number - balances[_addr].lastEvaporationBlock;
-        uint256 amt = balances[_addr].amount;
-        uint256 q = evaporationDenominator / evaporationRate;
-        uint256 precision = 8; // higher precision costs more gas
-        uint256 maxEvaporation = amt - fractionalExponentiation(amt, q, elapsedBlocks, true, precision);
-        if (maxEvaporation > amt)
-            return amt;
-        else
-            return maxEvaporation;
+        return calculateEvaporation(
+            balances[_addr].amount,
+            balances[_addr].lastEvaporationBlock
+        );
     }
+
     
     /// @notice Evaporate coins for a given address.
     /// @param _addr address from which to perform evaporation
@@ -306,7 +325,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         if (balances[_addr].amount == 0)
             balances[_addr].lastEvaporationBlock = block.number;
         
-        // for positive balances, evaporate coins and update lastEvaporationBlock
+        // for positive balances, evaporate coins and update 
+        // the lastEvaporationBlock,
         // but only do so if evaporation amount is positive
         else {
             assert(balances[_addr].lastEvaporationBlock > 0); // must be true for positive balances
@@ -314,6 +334,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             if (evaporation > 0) {
                 balances[_addr].amount -= evaporation; // pay evaporation
                 balances[_addr].lastEvaporationBlock = block.number; // update to current block
+                totalSupply -= evaporation; // update totalSupply
             }
         }
     }
