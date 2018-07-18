@@ -194,12 +194,12 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         return true;
     }
     
-    /// @notice Set the rainfall frequency, in minimum number of blocks between rainfalls.
-    /// @return True if rainfall frequency was updated; false otherwise.
+    /// @notice Set the rainfall period, in number of blocks between rainfalls.
+    /// @notice Will rain if a rain is due given the current blocksBetweenRainfalls.
     /// TODO: Enable authorization so only contract owner (or via proper governance) can update.
-    function setRainfallFrequency(uint256 newFrequency) public returns (bool success) {
-        blocksBetweenRainfalls = newFrequency;
-        return true;
+    function setRainfallPeriod(uint256 _blocksBetweenRainfalls) public {
+        rain();
+        blocksBetweenRainfalls = _blocksBetweenRainfalls;
     }
     
     // TODO: Create API for authorization, so that not any message sender can activate this.
