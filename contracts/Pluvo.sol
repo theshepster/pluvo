@@ -40,11 +40,21 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         evaporationDenominator = _evaporationDenominator;
         blocksBetweenRainfalls = _blocksBetweenRainfalls;
         rainfallPayouts.push(Rain(0, block.number));
+        parameterSetter = msg.sender;
+        registrar = msg.sender;
+    }
+    
+    /*--------- Modifiers ---------*/
+    
+    /// @notice Restrict function access to given address
+    modifier onlyBy(address _account) {
+        require(msg.sender == _account, "Sender unauthorized.");
+        _;
     }
     
     /*--------- ERC20 Functions ---------*/
     
-    //// @notice Return the total supply
+    /// @notice Return the total supply
     /// @return total supply
     function totalSupply() public view returns (uint256) {
         return totalSupply;
@@ -129,7 +139,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     
     /*--------- Pluvo Variables ---------*/
-
+    
+    // address of parameter setter, for functions that require authorization
+    address public parameterSetter;
+    
+    // registrar address, authorized to register and unregister addresses
+    address public registrar;
+    
     // authorized recipients of rain, mapping from address to last rainfall collected
     mapping (address => uint256) public rainees;
     
@@ -182,33 +198,29 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     /// @notice Set the evaporation rate numerator and denominator.
     /// @return True if evaporation rate was updated; false otherwise.
-    /// TODO: Enable authorization so only contract owner (or via proper governance) can update.
     function setEvaporationRate(
         uint256 _evaporationRate,
         uint256 _evaporationDenominator
-    ) public returns (bool success) {
+    ) public onlyBy(parameterSetter) {
         require(_evaporationDenominator >= _evaporationRate);
         require(_evaporationDenominator > 0);
         evaporationRate = _evaporationRate;
         evaporationDenominator = _evaporationDenominator;
-        return true;
     }
     
     /// @notice Set the rainfall period, in number of blocks between rainfalls.
     /// @notice Will rain if a rain is due given the current blocksBetweenRainfalls.
-    /// TODO: Enable authorization so only contract owner (or via proper governance) can update.
-    function setRainfallPeriod(uint256 _blocksBetweenRainfalls) public {
+    function setRainfallPeriod(uint256 _blocksBetweenRainfalls) public onlyBy(parameterSetter) {
         rain();
         blocksBetweenRainfalls = _blocksBetweenRainfalls;
     }
     
-    // TODO: Create API for authorization, so that not any message sender can activate this.
     /// @notice Register an address as an available rainee.
     /// @notice This function causes a rainfall before registration, if enough time has elapsed.
     /// @notice Note that this does not yet check for authorization.
     /// @param _rainee The address to register
     /// @return True if the address was registered, false if the address was already registered
-    function registerAddress(address _rainee) public returns (bool success) {
+    function registerAddress(address _rainee) public onlyBy(registrar) returns (bool success) {
         if (rainees[_rainee] == 0) {
             rain(); // rain first, if enough time has elapsed
             rainees[_rainee] = currentRainfallIndex();
@@ -218,13 +230,12 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         return false;
     }
     
-    // TODO: Create API for authorization, so that not any message sender can activate this.
     /// @notice Unregister an address, making it no longer an available rainee.
     /// @notice This function causes a rainfall before unregistration, if enough time has elapsed.
     /// @notice Note that this does not yet check for authorization.
     /// @param _rainee The address to unregister
     /// @return True if the address was unregistered, false if the address was already unregistered
-    function unregisterAddress(address _rainee) public returns (bool success) {
+    function unregisterAddress(address _rainee) public onlyBy(registrar) returns (bool success) {
         if (rainees[_rainee] > 0) {
             rain(); // rain first, if enough time has elapsed
             delete rainees[_rainee];
@@ -232,6 +243,16 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             return true;
         }
         return false;
+    }
+    
+    /// @notice Changes the parameterSetter
+    function changeParameterSetter(address _parameterSetter) public onlyBy(parameterSetter) {
+        parameterSetter = _parameterSetter;
+    }
+
+    /// @notice Changes the registrar
+    function changeRegistrar(address _registrar) public onlyBy(registrar) {
+        registrar = _registrar;
     }
     
     /// @notice Increase message sender's balance by amount of available rain.
