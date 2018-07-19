@@ -24,7 +24,7 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
     /*
     * These statements create state to be shared between tests.
     */
-    pluvo = await Pluvo.deployed();
+    let pluvo = await Pluvo.deployed();
     const supply0 = await pluvo.totalSupply.call();
     await pluvo.registerAddress(owner);
     const ownerBalance0 = await pluvo.balanceOf(owner);
@@ -35,22 +35,22 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
     const supply2 = await pluvo.totalSupply.call();
     await pluvo.transfer(recipient, 1, { from: owner });
     const supply3 = await pluvo.totalSupply.call();
-    console.log(supply0);
 
     describe('totalSupply()', () => { 
       it('should equal zero at construction', () => {
         assert(BigNumber(0).eq(supply0));
       });
 
-      it('should increase after rain', () => {
-        assert(supply1.gt(supply0));
+      it('should stay the same after rain', () => {
+        assert(supply1.eq(supply0));
       });
 
-      it('should stay the same after transfer', async () => {
-        assert(supply2.eq(supply3));
+      it('should decrease after transfer, ' +
+         'which causes evaporation', async () => {
+        assert(supply3.lt(supply2));
       });
 
-      it('should increase after collect() that causes rain()', () => {
+      it('should increase after collect()', () => {
           assert(supply2.gt(supply1));
       });
     });
@@ -89,7 +89,7 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
           const pendingEvaporation = await pluvo.calculateEvaporation(owner);
           const ownerBalance = await pluvo.balanceOf(owner);
           
-          // in the below line, the [0] is to acces the .amount member
+          // in the below line, the [0] is to access the .amount member
           // of the Solidity Balance struct. .amount is the first member
           // of the struct.
           const ownerRawBalance = BigNumber((await pluvo.balances(owner))[0]);
@@ -108,13 +108,20 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
     describe('transfer()', () => {
       const to = recipient;
       const amount = 101;
+      let pluvo; // this is a new instance
+      
+      beforeEach(async () => {  
+        pluvo = await Pluvo.new();
+      });
 
       it('reverts when sender has insufficient initial balance', async () => {
         await assertRevert(pluvo.transfer(to, amount, { from: owner }));
       });
 
-      it('reverts when sender has insufficient balance' +
+      it('reverts when sender has insufficient balance ' +
         'after evaporation', async () => {
+        await pluvo.registerAddress(owner);
+        await pluvo.collect({ from: owner }); // causes rain before collection
         await assertRevert(pluvo.transfer(to, amount, { from: owner }));
       });
 
@@ -246,7 +253,7 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
   });
 
   describe('rain()', () => {
-    it('', async () => {
+    it('totalSupply never exceeds maximum supply', async () => {
       assert(false, 'not implemented');
     });
   });
