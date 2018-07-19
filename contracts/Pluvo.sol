@@ -61,11 +61,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     }
 
     /// @notice send `_value` token to `_to` from `msg.sender`
-    /// @notice first, the message sender's balance falls by amount evaporated since last transfer
+    /// @notice first, the message sender's balance falls by 
+    ///         amount evaporated since last transfer
     /// @param _to The address of the recipient
     /// @param _value The amount of token to be transferred
     /// @return Whether the transfer was successful or not
-    function transfer(address _to, uint256 _value) public returns (bool success) {
+    function transfer(address _to, uint256 _value) 
+        public returns (bool success) {
         // evaporate from the sender
         evaporate(msg.sender);
 
@@ -78,18 +80,21 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // send funds
         balances[msg.sender].amount -= _value;
         balances[_to].amount += _value;
-        emit Transfer(msg.sender, _to, _value); //solhint-disable-line indent, no-unused-vars
+        emit Transfer(msg.sender, _to, _value);
         return true;
     }
 
-    /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
-    /// @notice first, the _from address balance falls by amount evaporated since last transfer
+    /// @notice send `_value` token to `_to` from `_from` 
+    ///         on the condition it is approved by `_from`
+    /// @notice first, the _from address balance falls
+    ///         by amount evaporated since last transfer
     /// @param _from The address of the sender
     /// @param _to The address of the recipient
     /// @param _value The amount of token to be transferred
     /// @return Whether the transfer was successful or not
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        // ensure the message sender is authorized to spend coins from the _from address
+    function transferFrom(address _from, address _to, uint256 _value) 
+        public returns (bool success) {
+        // ensure message sender is authorized to spend from the _from address
         uint256 allowance = allowed[_from][msg.sender];
         require(allowance >= _value);
         
@@ -108,12 +113,14 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         if (allowance < MAX_UINT256) {
             allowed[_from][msg.sender] -= _value;
         }
-        emit Transfer(_from, _to, _value); //solhint-disable-line indent, no-unused-vars
+        emit Transfer(_from, _to, _value);
         return true;
     }
 
-    /// @notice Displays the address's balance, after evaporation has been paid.
-    /// @notice This does not pay the evaporation, which would get paid at next transfer.
+    /// @notice Displays the address's balance, 
+    ///         after evaporation has been paid.
+    /// @notice This does not pay the evaporation, 
+    ///         which would get paid at next transfer.
     /// @param _owner The address from which the balance will be retrieved.
     /// @return The balance as if evaporation been paid.
     function balanceOf(address _owner) public view returns (uint256 balance) {
@@ -124,16 +131,18 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @param _spender The address of the account able to transfer the tokens
     /// @param _value The amount of tokens to be approved for transfer
     /// @return Whether the approval was successful or not
-    function approve(address _spender, uint256 _value) public returns (bool success) {
+    function approve(address _spender, uint256 _value) 
+        public returns (bool success) {
         allowed[msg.sender][_spender] = _value;
-        emit Approval(msg.sender, _spender, _value); //solhint-disable-line indent, no-unused-vars
+        emit Approval(msg.sender, _spender, _value);
         return true;
     }
 
     /// @param _owner The address of the account owning tokens
     /// @param _spender The address of the account able to transfer the tokens
     /// @return Amount of remaining tokens allowed to spent
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
+    function allowance(address _owner, address _spender) 
+        public view returns (uint256 remaining) {
         return allowed[_owner][_spender];
     }
     
@@ -146,7 +155,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     // registrar address, authorized to register and unregister addresses
     address public registrar;
     
-    // authorized recipients of rain, mapping from address to last rainfall collected
+    // authorized recipients of rain, 
+    // mapping from address to last rainfall collected
     mapping (address => uint256) public rainees;
     
     // used to store the amount and block number for each rainfall
@@ -163,7 +173,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     uint256 public evaporationDenominator;
     
     /* number of blocks between rainfall payouts
-     * this state variable exists to lessen number of contract calls that happen
+     * this state variable exists to lessen number of contract 
+     * calls that happen
      * when people collect their rain.
      */
     uint256 public blocksBetweenRainfalls;
@@ -177,14 +188,19 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
 
     /*--------- Pluvo functions ---------*/
     
-    /// @notice Counts 1 more than the number of past rainfalls. This is because the rainfallPayouts array is seeded with a (0, block.number) value in the constructor.
-    /// @notice That is, this returns the index of the rainfall that is about to occur next. For example, a return value of 2 indicates that the next rainfall will be the second rainfall ever.
+    /// @notice Counts 1 more than the number of past rainfalls. This is 
+    /// because the rainfallPayouts array is seeded with a (0, block.number) 
+    /// value in the constructor.
+    /// @notice That is, this returns the index of the rainfall that is about 
+    /// to occur next. For example, a return value of 2 indicates that the 
+    /// next rainfall will be the second rainfall ever.
     /// @return Number of past rainfalls.
     function currentRainfallIndex() public view returns (uint256) {
         return rainfallPayouts.length;
     }
     
-    /// @notice Determine the total amount of rainfall due to each recipient in the next rainfall.
+    /// @notice Determine the total amount of rainfall due to each recipient 
+    /// in the next rainfall.
     /// @return Total rainfall due in a rainfall to each registered address.
     function rainPerRainfallPerPerson() public view returns (uint256) {
         require(numberOfRainees > 0);
@@ -209,18 +225,23 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     }
     
     /// @notice Set the rainfall period, in number of blocks between rainfalls.
-    /// @notice Will rain if a rain is due given the current blocksBetweenRainfalls.
-    function setRainfallPeriod(uint256 _blocksBetweenRainfalls) public onlyBy(parameterSetter) {
+    /// @notice Will rain if a rain is due given the current 
+    /// blocksBetweenRainfalls.
+    function setRainfallPeriod(uint256 _blocksBetweenRainfalls) 
+        public onlyBy(parameterSetter) {
         rain();
         blocksBetweenRainfalls = _blocksBetweenRainfalls;
     }
     
     /// @notice Register an address as an available rainee.
-    /// @notice This function causes a rainfall before registration, if enough time has elapsed.
+    /// @notice This function causes a rainfall before registration, if enough 
+    /// time has elapsed.
     /// @notice Note that this does not yet check for authorization.
     /// @param _rainee The address to register
-    /// @return True if the address was registered, false if the address was already registered
-    function registerAddress(address _rainee) public onlyBy(registrar) returns (bool success) {
+    /// @return True if the address was registered, false if the address was 
+    /// already registered
+    function registerAddress(address _rainee) 
+        public onlyBy(registrar) returns (bool success) {
         if (rainees[_rainee] == 0) {
             rain(); // rain first, if enough time has elapsed
             rainees[_rainee] = currentRainfallIndex();
@@ -231,11 +252,14 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     }
     
     /// @notice Unregister an address, making it no longer an available rainee.
-    /// @notice This function causes a rainfall before unregistration, if enough time has elapsed.
+    /// @notice This function causes a rainfall before unregistration,
+    /// if enough time has elapsed.
     /// @notice Note that this does not yet check for authorization.
     /// @param _rainee The address to unregister
-    /// @return True if the address was unregistered, false if the address was already unregistered
-    function unregisterAddress(address _rainee) public onlyBy(registrar) returns (bool success) {
+    /// @return True if the address was unregistered, 
+    /// false if the address was already unregistered
+    function unregisterAddress(address _rainee) 
+        public onlyBy(registrar) returns (bool success) {
         if (rainees[_rainee] > 0) {
             rain(); // rain first, if enough time has elapsed
             delete rainees[_rainee];
@@ -246,7 +270,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     }
     
     /// @notice Changes the parameterSetter
-    function changeParameterSetter(address _parameterSetter) public onlyBy(parameterSetter) {
+    function changeParameterSetter(address _parameterSetter) 
+        public onlyBy(parameterSetter) {
         parameterSetter = _parameterSetter;
     }
 
@@ -297,26 +322,41 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     }
     
     /// @notice Store rainfall payout(s) due since last rainfall.
-    /// @notice If multiple rainfalls should have occurred, store the rain from each of them.
+    /// @notice If multiple rainfalls should have occurred, store the rain 
+    /// from each of them.
     /// @return True if enough time had elapsed since last rainfall.
-    function rain() public {
+    function rain() public returns (uint256 rainAmount) {
         if (numberOfRainees > 0) {
-            // note that rainfallPayouts[currentRainfallIndex() - 1] is guaranteed
-            // to return a value because the rainfallPayouts array was seeded with
+            // note that rainfallPayouts[currentRainfallIndex() - 1] 
+            // is guaranteed to return a value because the 
+            // rainfallPayouts array was seeded with
             // a Rain struct in the contract constructor
-            uint256 lastRainBlock = rainfallPayouts[currentRainfallIndex() - 1].rainBlock;
-            uint256 rainfallsDue = (block.number - lastRainBlock) / blocksBetweenRainfalls;
+            uint256 lastRainBlock =
+                rainfallPayouts[currentRainfallIndex() - 1].rainBlock;
+            uint256 rainfallsDue =
+                (block.number - lastRainBlock) / blocksBetweenRainfalls;
     
             // store per-person rainfall amount 
-            // also note that, due to integer division, lastRainBlock + (blocksBetweenRainfalls * rainfallsDue) is not necessarily equal to block.number 
+            // also note that, due to integer division, 
+            // lastRainBlock + (blocksBetweenRainfalls * rainfallsDue)
+            // is not necessarily equal to block.number 
             if (rainfallsDue > 0) {
-                rainfallPayouts.push(Rain(rainPerRainfallPerPerson() * rainfallsDue, lastRainBlock + (blocksBetweenRainfalls * rainfallsDue)));
+                rainAmount = rainPerRainfallPerPerson() * rainfallsDue;
+                rainfallPayouts.push(
+                    Rain(
+                        rainAmount, 
+                        lastRainBlock + 
+                        (blocksBetweenRainfalls * rainfallsDue)
+                    )
+                );
             }
         }
     }
     
-    /// @notice Calculates evaporation amount for a given balance and block number, without evaporating.
-    /// @notice chain-weights the per-block evaporation rate so evaporation will not be > 100%
+    /// @notice Calculates evaporation amount for a given balance and block
+    /// number, without evaporating.
+    /// @notice chain-weights the per-block evaporation rate so evaporation
+    /// will not be > 100%
     /// @param balance amount of coins to evaporate
     /// @param lastBlock last block when evaporation occurred
     function calculateEvaporation(
@@ -327,17 +367,23 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         uint256 elapsedBlocks = block.number - lastBlock;
         uint256 q = evaporationDenominator / evaporationRate;
         uint256 precision = 8; // higher precision costs more gas
-        uint256 maxEvaporation = balance - fractionalExponentiation(balance, q, elapsedBlocks, true, precision);
+        uint256 maxEvaporation = balance - 
+            fractionalExponentiation(
+                balance, q, elapsedBlocks, true, precision
+            );
         if (maxEvaporation > balance)
             return balance;
         else
             return maxEvaporation;
     }
 
-    /// @notice Calculates evaporation amount for a given address, without evaporating.
-    /// @notice chain-weights the per-block evaporation rate so evaporation will not be > 100%
+    /// @notice Calculates evaporation amount for a given address,
+    /// without evaporating.
+    /// @notice chain-weights the per-block evaporation rate
+    /// so evaporation will not be > 100%
     /// @param _addr address from which to calcuate evaporation
-    function calculateEvaporation(address _addr) public view returns (uint256) {
+    function calculateEvaporation(address _addr) 
+        public view returns (uint256) {
         return calculateEvaporation(
             balances[_addr].amount,
             balances[_addr].lastEvaporationBlock
@@ -356,11 +402,12 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // the lastEvaporationBlock,
         // but only do so if evaporation amount is positive
         else {
-            assert(balances[_addr].lastEvaporationBlock > 0); // must be true for positive balances
+            // this assert must be true for positive balances
+            assert(balances[_addr].lastEvaporationBlock > 0); 
             uint256 evaporation = calculateEvaporation(_addr);
             if (evaporation > 0) {
                 balances[_addr].amount -= evaporation; // pay evaporation
-                balances[_addr].lastEvaporationBlock = block.number; // update to current block
+                balances[_addr].lastEvaporationBlock = block.number;
                 totalSupply -= evaporation; // update totalSupply
             }
         }
@@ -375,10 +422,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @param k coefficient
     /// @param q divisor (e.g., for 1.02^n, q = 100)
     /// @param n exponent
-    /// @param b negative toggle (e.g., b = true for 0.99^n, b = false for 1.01^n)
-    /// @param p precision parameter. (p ~ log(n) is usually enough). Higher p costs more gas
+    /// @param b negative toggle (e.g., b = true for 0.99^n,
+    /// b = false for 1.01^n)
+    /// @param p precision parameter. (p ~ log(n) is usually enough). 
+    /// Higher p costs more gas
     /// @return result of computation (k * (1 ± 1/q) ^ n)
-    function fractionalExponentiation(uint k, uint q, uint n, bool b, uint p) private pure returns (uint) {
+    function fractionalExponentiation(uint k, uint q, uint n, bool b, uint p) 
+        private pure returns (uint) {
         uint s = 0;
         uint N = 1;
         uint B = 1;
