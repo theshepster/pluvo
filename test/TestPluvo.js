@@ -11,7 +11,7 @@ async function assertRevert(promise) {
   }
 }
 
-contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
+contract('Pluvo', async ([owner, recipient, anotherAccount]) => {
   
 
   /*
@@ -33,7 +33,7 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
     await pluvo.collect({ from: owner });
     const ownerBalance1 = await pluvo.balanceOf(owner);
     const supply2 = await pluvo.totalSupply.call();
-    await pluvo.transfer(recipient, 1, { from: owner });
+    await pluvo.transfer(recipient, 15, { from: owner });
     const supply3 = await pluvo.totalSupply.call();
 
     describe('totalSupply()', () => { 
@@ -62,8 +62,7 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
       });
 
       it('should be positive for an address with coins', async () => {
-          const balance = await pluvo.balanceOf(owner);
-          assert(balance.gt(BigNumber(0)));
+          assert(ownerBalance1.gt(BigNumber(0)));
       });
 
       it('should increase after receipt', async () => {
@@ -107,21 +106,40 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
     
     describe('transfer()', () => {
       const to = recipient;
-      const amount = 101;
       let pluvo; // this is a new instance
       
-      beforeEach(async () => {  
-        pluvo = await Pluvo.new();
+      beforeEach(async () => {
+        const maxSupply = 100;
+        const numerator = 1;
+        const denominator = 4;
+        const period = 1;
+        pluvo = await Pluvo.new(maxSupply, numerator, denominator, period);
+        await pluvo.registerAddress(owner, { from: owner });
+        await pluvo.collect({ from: owner }); // rain -> collect (period = 1)
       });
 
       it('reverts when sender has insufficient initial balance', async () => {
+        const amount = 99;
         await assertRevert(pluvo.transfer(to, amount, { from: owner }));
       });
 
       it('reverts when sender has insufficient balance ' +
         'after evaporation', async () => {
-        await pluvo.registerAddress(owner);
-        await pluvo.collect({ from: owner }); // causes rain before collection
+        const amount = 40;
+        const ownerBalance = await pluvo.balanceOf(owner);
+        const ownerRawBalance = BigNumber((await pluvo.balances(owner))[0]);
+        assert(
+          ownerBalance.lt(BigNumber(amount)), 
+          `Update test parameters; test is only useful if ownerBalance
+          (currently ${ownerBalance}) is less than amount to 
+          send (${amount})
+          `)
+        assert(
+          ownerRawBalance.gt(BigNumber(amount)), 
+          `Update test parameters; test is only useful if ownerRawBalance
+          (currently ${ownerRawBalance}) is greater than amount to 
+          send (${amount})
+          `)
         await assertRevert(pluvo.transfer(to, amount, { from: owner }));
       });
 
@@ -134,6 +152,7 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
       });
 
       // TODO: MAKE THIS ONLY HAVE ONE ASSERT, TO TEST THE UNITS SEPARATELY
+      // TODO: USE BIGNUMBER COMPARISONS
       it('transfers the requested amount (after evaporation)', async () => {
         await pluvo.transfer(to, amount, { from: owner });
 
@@ -235,12 +254,67 @@ contract('Pluvo', async ([_, owner, recipient, anotherAccount]) => {
   });
 
   describe('registerAddress()', () => {
+    let pluvo;
+
+    beforeEach(async () => {
+      const maxSupply = 100;
+      const numerator = 1;
+      const denominator = 4;
+      const period = 1;
+      pluvo = await Pluvo.new(maxSupply, numerator, denominator, period);
+    });
+
+    it('registers registrar sent by registrar', async () => {
+      assert(
+        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        "New Pluvo should start with zero rainees"
+      );
+      await pluvo.registerAddress(owner, { from: owner });
+      assert(
+        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        "Registering address should increase numberOfRainees by 1"
+      );
+    });
+
+    it('does not register an address sent by non-registrar', async () => {
+      assert(
+        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        "New Pluvo should start with zero rainees"
+      );
+      await pluvo.registerAddress(recipient, { from: owner });
+      assert(
+        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        "Registering address should increase numberOfRainees by 1"
+      );
+    });
+
+    it('does not register an address twice', async () => {
+      assert(
+        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        "New Pluvo should start with zero rainees"
+      );
+      await pluvo.registerAddress(owner, { from: owner });
+      await pluvo.registerAddress(owner, { from: owner });
+      assert(
+        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        "Registering address twice should only increase rainees once"
+      );
+    });
+  });
+
+  describe('unregisterAddress()', () => {
     it('', async () => {
       assert(false, 'not implemented');
     });
   });
 
-  describe('unregisterAddress()', () => {
+  describe('changeParameterSetter()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('changeRegistrar()', () => {
     it('', async () => {
       assert(false, 'not implemented');
     });
