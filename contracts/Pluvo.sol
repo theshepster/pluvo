@@ -362,7 +362,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     function calculateEvaporation(
         uint256 balance, 
         uint256 lastBlock
-    ) public view returns (uint256) {
+    ) private view returns (uint256) {
         require(block.number >= lastBlock);
         uint256 elapsedBlocks = block.number - lastBlock;
         uint256 q = evaporationDenominator / evaporationRate;
