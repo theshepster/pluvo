@@ -364,6 +364,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         uint256 lastBlock
     ) private view returns (uint256) {
         require(block.number >= lastBlock);
+        if (evaporationRate == 0)
+            return 0;
         uint256 elapsedBlocks = block.number - lastBlock;
         uint256 q = evaporationDenominator / evaporationRate;
         uint256 precision = 8; // higher precision costs more gas
