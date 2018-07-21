@@ -11,7 +11,7 @@ async function assertRevert(promise) {
   }
 }
 
-contract('Pluvo', async ([owner, recipient, anotherAccount]) => {
+contract('Pluvo', async ([owner, recipient, spender]) => {
   let pluvo;
 
   beforeEach(async () => {
@@ -73,7 +73,7 @@ contract('Pluvo', async ([owner, recipient, anotherAccount]) => {
     });
 
     it('should return zero for account with no balance', async () => {
-      const balance = await pluvo.balanceOf(anotherAccount);
+      const balance = await pluvo.balanceOf(spender);
       assert(BigNumber(0).eq(balance));
     });
 
@@ -142,14 +142,14 @@ contract('Pluvo', async ([owner, recipient, anotherAccount]) => {
         ownerBalance.lt(BigNumber(amount)), 
         `Update test parameters; test is only useful if ownerBalance
         (currently ${ownerBalance}) is less than amount to 
-        send (${amount})
-        `)
+        send (${amount})`
+      );
       assert(
         ownerRawBalance.gt(BigNumber(amount)), 
         `Update test parameters; test is only useful if ownerRawBalance
         (currently ${ownerRawBalance}) is greater than amount to 
-        send (${amount})
-        `)
+        send (${amount})`
+      );
       await assertRevert(pluvo.transfer(to, amount, { from: owner }));
     });
 
@@ -220,8 +220,152 @@ contract('Pluvo', async ([owner, recipient, anotherAccount]) => {
   });
 
   describe('transferFrom()', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
+    const to = recipient;
+    
+    beforeEach(async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+      await pluvo.collect({ from: owner }); // rain -> collect (period = 1)
+      await pluvo.approve(spender, 12, { from: owner });
+    });
+
+    it('reverts when \'from\' has insufficient initial balance', async () => {
+      const amount = 99;
+      await assertRevert(pluvo.transferFrom(
+        owner, to, amount, { from: spender }
+      ));
+    });
+
+    it('reverts when \'from\' has insufficient balance ' +
+      'after evaporation', async () => {
+      const amount = 40;
+      const ownerBalance = await pluvo.balanceOf(owner);
+      const ownerRawBalance = BigNumber((await pluvo.balances(owner))[0]);
+      assert(
+        ownerBalance.lt(BigNumber(amount)), 
+        `Update test parameters; test is only useful if ownerBalance
+        (currently ${ownerBalance}) is less than amount to 
+        send (${amount})`
+      );
+      assert(
+        ownerRawBalance.gt(BigNumber(amount)), 
+        `Update test parameters; test is only useful if ownerRawBalance
+        (currently ${ownerRawBalance}) is greater than amount to 
+        send (${amount})`
+      );
+      await assertRevert(pluvo.transferFrom(
+        owner, to, amount, { from: spender }
+      ));    
+    });
+
+    it('reverts when \'from\' has sufficient balance ' +
+      'but spender is does not have sufficient approval', async () => {
+      const amount = 15;
+      const ownerBalance = await pluvo.balanceOf(owner);
+      const allowance = await pluvo.allowance(owner, spender);
+      assert(
+        ownerBalance.gt(BigNumber(amount)), 
+        `Update test parameters; test is only useful if ownerBalance
+        (currently ${ownerBalance}) is greater than amount to 
+        send (${amount})`
+      );
+      assert(
+        allowance.lt(BigNumber(amount)), 
+        `Update test parameters; test is only useful if allowance
+        (currently ${ownerBalance}) is less than amount to 
+        send (${amount})`
+      );
+      await assertRevert(pluvo.transferFrom(
+        owner, to, amount, { from: spender }
+      ));
+    });
+
+    it('reverts when \'from\' has insufficient balance ' +
+      'but spender has sufficient approval', async () => {
+      await pluvo.approve(spender, 99, { from: owner });
+      const amount = 70;
+      const ownerBalance = await pluvo.balanceOf(owner);
+      const allowance = await pluvo.allowance(owner, spender);
+      assert(
+        ownerBalance.lt(BigNumber(amount)), 
+        `Update test parameters; test is only useful if ownerBalance
+        (currently ${ownerBalance}) is less than amount to 
+        send (${amount})`
+      );
+      assert(
+        allowance.gt(BigNumber(amount)), 
+        `Update test parameters; test is only useful if allowance
+        (currently ${ownerBalance}) is greater than amount to 
+        send (${amount})`
+      );
+      await assertRevert(pluvo.transferFrom(
+        owner, to, amount, { from: spender }
+      ));
+    });
+
+    it('evaporates from \'from\' (tested with 0 transfer)', async () => {
+      const amount = 0;
+      const senderBalance0 = BigNumber((await pluvo.balances(owner))[0]);
+      await pluvo.transferFrom(owner, to, amount, { from: spender });
+      const senderBalance1 = BigNumber((await pluvo.balances(owner))[0]);
+      assert(
+        senderBalance1.lt(senderBalance0),
+        `senderBalance0 is ${senderBalance0}, 
+        senderBalance1 is ${senderBalance1}`
+      );
+    });
+
+    it('evaporates from recipient (tested with 0 transfer)', async () => {
+      let amount = 10;
+      await pluvo.transfer(to, amount, { from: owner });
+      const recipientBalance0 = BigNumber((await pluvo.balances(to))[0]);
+      amount = 0;
+      await pluvo.transferFrom(owner, to, amount, { from: spender });
+      const recipientBalance1 = BigNumber((await pluvo.balances(to))[0]);
+      assert(
+        recipientBalance1.lt(recipientBalance0),
+        `recipientBalance0 is ${recipientBalance0}, 
+        recipientBalance1 is ${recipientBalance1}`
+      );
+    });
+
+    it('receiver receives requested amount (no evaporation)', async () => {
+      await pluvo.setEvaporationRate(0, 1); // pause evaporation
+      const amount = 10;
+      const recipientBalance0 = await pluvo.balanceOf(to);
+      await pluvo.transferFrom(owner, to, amount, { from: spender });
+      const recipientBalance1 = await pluvo.balanceOf(to);
+      assert(
+        recipientBalance1.minus(BigNumber(amount)).eq(recipientBalance0),
+        `recipientBalance0 is ${recipientBalance0}, 
+        recipientBalance1 is ${recipientBalance1}, 
+        amount to send is ${amount}`
+      );
+    });
+
+    it('sender is debited transfer amount (no evaporation)', async () => {
+      await pluvo.setEvaporationRate(0, 1); // pause evaporation
+      const amount = 10;
+      const senderBalance0 = await pluvo.balanceOf(owner);
+      await pluvo.transferFrom(owner, to, amount, { from: spender });
+      const senderBalance1 = await pluvo.balanceOf(owner);
+      assert(
+        senderBalance1.plus(BigNumber(amount)).eq(senderBalance0),
+        `senderBalance0 is ${senderBalance0}, 
+        senderBalance1 is ${senderBalance1}, 
+        amount to send is ${amount}`
+      );
+    });
+
+    it('emits a transfer event', async () => {
+      const amount = 10;
+      const { logs } = 
+        await pluvo.transferFrom(owner, to, amount, { from: spender });
+
+      assert.equal(logs.length, 1);
+      assert.equal(logs[0].event, 'Transfer');
+      assert.equal(logs[0].args.from, owner);
+      assert.equal(logs[0].args.to, to);
+      assert(logs[0].args.value.eq(amount));
     });
   });
 
@@ -237,65 +381,65 @@ contract('Pluvo', async ([owner, recipient, anotherAccount]) => {
     });
   });
 
-describe('rainees getter function', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('rainees getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('rainfallPayouts getter function', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('rainfallPayouts getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('evaporationRate getter function', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('evaporationRate getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('blocksBetweenRainfalls getter function', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('blocksBetweenRainfalls getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('maxSupply getter function', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('maxSupply getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('numberOfRainees getter function', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('numberOfRainees getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('currentRainfallIndex()', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('currentRainfallIndex()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('rainPerRainfallPerPerson()', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('rainPerRainfallPerPerson()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('setEvaporationRate()', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('setEvaporationRate()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
-describe('setRainfallFrequency()', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
+  describe('setRainfallFrequency()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
-});
 
   describe('registerAddress()', () => {
     let pluvo;
@@ -383,7 +527,7 @@ describe('setRainfallFrequency()', () => {
         (await pluvo.numberOfRainees()).eq(BigNumber(1)),
         "There should have been one address registered"
       );
-      await pluvo.unregisterAddress(anotherAccount, { from: owner });
+      await pluvo.unregisterAddress(spender, { from: owner });
       assert(
         (await pluvo.numberOfRainees()).eq(BigNumber(1)),
         "There should stil be one person registered"
