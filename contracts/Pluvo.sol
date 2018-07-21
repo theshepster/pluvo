@@ -1,10 +1,10 @@
 pragma solidity ^0.4.24;
 pragma experimental "v0.5.0";
 
-import 'openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
+import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 
 contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
-    
+            
     /*--------- CONSTANTS ---------*/
     
     uint256 constant private MAX_UINT256 = 2**256 - 1;
@@ -198,7 +198,15 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     function currentRainfallIndex() public view returns (uint256) {
         return rainfallPayouts.length;
     }
-    
+
+    /// @notice This is guaranteed to return a value because the 
+    /// rainfallPayouts array was seeded with a Rain struct in the constructor
+    /// @notice Determine the last block when rain happened
+    /// @return Last block number when rain happened
+    function lastRainBlock() public view returns (uint256) {
+        return rainfallPayouts[currentRainfallIndex() - 1].rainBlock;
+    }
+
     /// @notice Determine the total amount of rainfall due to each recipient 
     /// in the next rainfall.
     /// @return Total rainfall due in a rainfall to each registered address.
@@ -327,25 +335,19 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @return True if enough time had elapsed since last rainfall.
     function rain() public returns (uint256 rainAmount) {
         if (numberOfRainees > 0) {
-            // note that rainfallPayouts[currentRainfallIndex() - 1] 
-            // is guaranteed to return a value because the 
-            // rainfallPayouts array was seeded with
-            // a Rain struct in the contract constructor
-            uint256 lastRainBlock =
-                rainfallPayouts[currentRainfallIndex() - 1].rainBlock;
             uint256 rainfallsDue =
-                (block.number - lastRainBlock) / blocksBetweenRainfalls;
+                (block.number - lastRainBlock()) / blocksBetweenRainfalls;
     
             // store per-person rainfall amount 
             // also note that, due to integer division, 
-            // lastRainBlock + (blocksBetweenRainfalls * rainfallsDue)
+            // lastRainBlock() + (blocksBetweenRainfalls * rainfallsDue)
             // is not necessarily equal to block.number 
             if (rainfallsDue > 0) {
                 rainAmount = rainPerRainfallPerPerson() * rainfallsDue;
                 rainfallPayouts.push(
                     Rain(
                         rainAmount, 
-                        lastRainBlock + 
+                        lastRainBlock() + 
                         (blocksBetweenRainfalls * rainfallsDue)
                     )
                 );
@@ -366,7 +368,14 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         require(block.number >= lastBlock);
         if (evaporationRate == 0)
             return 0;
-        uint256 elapsedBlocks = block.number - lastBlock;
+        
+        uint256 elapsedEvaporations = 
+            (block.number - lastBlock) / blocksBetweenRainfalls;
+
+        // due to integer division, elapsedBlocks does not necessarily equal
+        // block.number - lastBlock
+        uint256 elapsedBlocks = elapsedEvaporations * blocksBetweenRainfalls;
+
         uint256 q = evaporationDenominator / evaporationRate;
         uint256 precision = 8; // higher precision costs more gas
         uint256 maxEvaporation = balance - 
@@ -394,11 +403,12 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
 
     
     /// @notice Evaporate coins for a given address.
+    /// @notice Only evaporate during rain blocks.
     /// @param _addr address from which to perform evaporation
     function evaporate(address _addr) private {
         // for a zero balance, just update the lastEvaporationBlock
         if (balances[_addr].amount == 0)
-            balances[_addr].lastEvaporationBlock = block.number;
+            balances[_addr].lastEvaporationBlock = lastRainBlock();
         
         // for positive balances, evaporate coins and update 
         // the lastEvaporationBlock,
@@ -409,7 +419,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             uint256 evaporation = calculateEvaporation(_addr);
             if (evaporation > 0) {
                 balances[_addr].amount -= evaporation; // pay evaporation
-                balances[_addr].lastEvaporationBlock = block.number;
+                balances[_addr].lastEvaporationBlock = lastRainBlock();
                 totalSupply -= evaporation; // update totalSupply
             }
         }
