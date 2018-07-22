@@ -15,7 +15,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     struct Balance {
         uint256 amount;
-        uint256 lastEvaporationBlock;
+        uint256 lastEvaporationTime;
     }
     
     mapping (address => Balance) public balances;
@@ -30,7 +30,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         uint256 _maxSupply,
         uint256 _evaporationRate,
         uint256 _evaporationDenominator,
-        uint256 _blocksBetweenRainfalls
+        uint256 _secondsBetweenRainfalls
     ) public {
         require(_evaporationDenominator >= _evaporationRate);
         require(_evaporationDenominator > 0);
@@ -40,8 +40,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         maxSupply = _maxSupply;
         evaporationRate = _evaporationRate;
         evaporationDenominator = _evaporationDenominator;
-        blocksBetweenRainfalls = _blocksBetweenRainfalls;
-        rainfallPayouts.push(Rain(0, block.number));
+        secondsBetweenRainfalls = _secondsBetweenRainfalls;
+        rainfallPayouts.push(Rain(0, block.timestamp));
         parameterSetter = msg.sender;
         registrar = msg.sender;
     }
@@ -162,25 +162,21 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     // mapping from address to last rainfall collected
     mapping (address => uint256) public rainees;
     
-    // used to store the amount and block number for each rainfall
+    // used to store the amount and time for each rainfall
     struct Rain {
         uint256 amount;
-        uint256 rainBlock;
+        uint256 rainTime;
     }
     
-    // stores payout amount and block number for each rainfall
+    // stores payout amount and time for each rainfall
     Rain[] public rainfallPayouts;
     
-    // evaporationRate coins per denominator evaporate per block
+    // evaporationRate coins per evaporationDenominator evaporate per rainfall
     uint256 public evaporationRate; 
     uint256 public evaporationDenominator;
     
-    /* number of blocks between rainfall payouts
-     * this state variable exists to lessen number of contract 
-     * calls that happen
-     * when people collect their rain.
-     */
-    uint256 public blocksBetweenRainfalls;
+    // number of seconds between rainfall payouts
+    uint256 public secondsBetweenRainfalls;
 
     // maximum supply ever, used for calculating rain amount
     uint256 public maxSupply;
@@ -192,7 +188,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /*--------- Pluvo functions ---------*/
     
     /// @notice Counts 1 more than the number of past rainfalls. This is 
-    /// because the rainfallPayouts array is seeded with a (0, block.number) 
+    /// because the rainfallPayouts array is seeded with a (0, block.timestamp)
     /// value in the constructor.
     /// @notice That is, this returns the index of the rainfall that is about 
     /// to occur next. For example, a return value of 2 indicates that the 
@@ -204,10 +200,10 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
 
     /// @notice This is guaranteed to return a value because the 
     /// rainfallPayouts array was seeded with a Rain struct in the constructor
-    /// @notice Determine the last block when rain happened
-    /// @return Last block number when rain happened
-    function lastRainBlock() public view returns (uint256) {
-        return rainfallPayouts[currentRainfallIndex().sub(1)].rainBlock;
+    /// @notice Determine the last time when rain happened
+    /// @return Last time when rain happened
+    function lastRainTime() public view returns (uint256) {
+        return rainfallPayouts[currentRainfallIndex().sub(1)].rainTime;
     }
 
     /// @notice Determine the total amount of rainfall due to each recipient 
@@ -215,10 +211,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @return Total rainfall due in a rainfall to each registered address.
     function rainPerRainfallPerPerson() public view returns (uint256) {
         require(numberOfRainees > 0);
-        maxSupply.mul(blocksBetweenRainfalls).mul(evaporationRate).div(evaporationDenominator).div(numberOfRainees);
         return 
             maxSupply
-            .mul(blocksBetweenRainfalls)
             .mul(evaporationRate)
             .div(evaporationDenominator)
             .div(numberOfRainees);
@@ -237,13 +231,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         evaporationDenominator = _evaporationDenominator;
     }
     
-    /// @notice Set the rainfall period, in number of blocks between rainfalls.
+    /// @notice Set the rainfall period, in seconds between rainfalls.
     /// @notice Will rain if a rain is due given the current 
-    /// blocksBetweenRainfalls.
-    function setRainfallPeriod(uint256 _blocksBetweenRainfalls) 
+    /// secondsBetweenRainfalls.
+    function setRainfallPeriod(uint256 _secondsBetweenRainfalls) 
         public onlyBy(parameterSetter) {
         rain();
-        blocksBetweenRainfalls = _blocksBetweenRainfalls;
+        secondsBetweenRainfalls = _secondsBetweenRainfalls;
     }
     
     /// @notice Register an address as an available rainee.
@@ -325,14 +319,14 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // subtract evaporation before collection
         for (uint256 i = currentRainfallOfSender; i < upperLimit; i++) {
             uint256 amt = rainfallPayouts[i].amount;
-            uint256 blk = rainfallPayouts[i].rainBlock;
+            uint256 time = rainfallPayouts[i].rainTime;
             fundsCollected = 
-                fundsCollected.add(amt).sub(calculateEvaporation(amt, blk));
+                fundsCollected.add(amt).sub(calculateEvaporation(amt, time));
         }
 
         // evaporate from message sender
         // if current balance is zero, this updates the address's 
-        // lastEvaporationBlock to the current block number
+        // lastEvaporationTime to the current time
         evaporate(msg.sender);
         
         // pay collection to recipient
@@ -360,56 +354,49 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @notice If multiple rainfalls should have occurred, store the rain 
     /// from each of them.
     /// @return True if enough time had elapsed since last rainfall.
-    function rain() public returns (uint256 rainAmount) {
+    function rain() public returns (uint256 rainfallsDue) {
         if (numberOfRainees > 0) {
-            uint256 rainfallsDue =
-                block.number.sub(lastRainBlock()).div(blocksBetweenRainfalls);
+            rainfallsDue =
+                block.timestamp
+                .sub(lastRainTime())
+                .div(secondsBetweenRainfalls);
     
-            // store per-person rainfall amount 
-            // also note that, due to integer division, 
-            // lastRainBlock() + (blocksBetweenRainfalls * rainfallsDue)
-            // is not necessarily equal to block.number 
-            if (rainfallsDue > 0) {
-                rainAmount = rainPerRainfallPerPerson().mul(rainfallsDue);
+            // store per-person rainfall amount.
+            // note that lastRainTime() updates after each push
+            for (uint256 i = 1; i <= rainfallsDue; i++) {
                 rainfallPayouts.push(
                     Rain(
-                        rainAmount, 
-                        blocksBetweenRainfalls.mul(rainfallsDue)
-                        .add(lastRainBlock())
+                        rainPerRainfallPerPerson(), 
+                        secondsBetweenRainfalls.add(lastRainTime())
                     )
                 );
             }
         }
     }
     
-    /// @notice Calculates evaporation amount for a given balance and block
-    /// number, without evaporating.
-    /// @notice chain-weights the per-block evaporation rate so evaporation
+    /// @notice Calculates evaporation amount for a given balance and time
+    /// without evaporating.
+    /// @notice chain-weights the per-rainfall evaporation rate so evaporation
     /// will not be > 100%
     /// @param balance amount of coins to evaporate
-    /// @param lastBlock last block when evaporation occurred
+    /// @param lastTime last time when evaporation occurred
     function calculateEvaporation(
         uint256 balance, 
-        uint256 lastBlock
+        uint256 lastTime
     ) private view returns (uint256) {
-        require(block.number >= lastBlock);
+        require(block.timestamp >= lastTime);
         if (evaporationRate == 0)
             return 0;
         
         uint256 elapsedEvaporations = 
-            block.number.sub(lastBlock).div(blocksBetweenRainfalls);
-
-        // due to integer division, elapsedBlocks does not necessarily equal
-        // block.number - lastBlock
-        uint256 elapsedBlocks = 
-            elapsedEvaporations.mul(blocksBetweenRainfalls);
+            block.timestamp.sub(lastTime).div(secondsBetweenRainfalls);
 
         uint256 q = evaporationDenominator.div(evaporationRate);
         uint256 precision = 8; // higher precision costs more gas
         uint256 maxEvaporation = 
             balance.sub( 
                 fractionalExponentiation(
-                    balance, q, elapsedBlocks, true, precision
+                    balance, q, elapsedEvaporations, true, precision
                 )
             );
         if (maxEvaporation > balance)
@@ -420,37 +407,37 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
 
     /// @notice Calculates evaporation amount for a given address,
     /// without evaporating.
-    /// @notice chain-weights the per-block evaporation rate
+    /// @notice chain-weights the per-rainfall evaporation rate
     /// so evaporation will not be > 100%
     /// @param _addr address from which to calcuate evaporation
     function calculateEvaporation(address _addr) 
         public view returns (uint256) {
         return calculateEvaporation(
             balances[_addr].amount,
-            balances[_addr].lastEvaporationBlock
+            balances[_addr].lastEvaporationTime
         );
     }
 
     
     /// @notice Evaporate coins for a given address.
-    /// @notice Only evaporate during rain blocks.
+    /// @notice Only evaporate in the same block as rain.
     /// @param _addr address from which to perform evaporation
     function evaporate(address _addr) private {
-        // for a zero balance, just update the lastEvaporationBlock
+        // for a zero balance, just update the lastEvaporationTime
         if (balances[_addr].amount == 0)
-            balances[_addr].lastEvaporationBlock = lastRainBlock();
+            balances[_addr].lastEvaporationTime = lastRainTime();
         
         // for positive balances, evaporate coins and update 
-        // the lastEvaporationBlock,
+        // the lastEvaporationTime,
         // but only do so if evaporation amount is positive
         else {
             // this assert must be true for positive balances
-            assert(balances[_addr].lastEvaporationBlock > 0); 
+            assert(balances[_addr].lastEvaporationTime > 0); 
             uint256 evaporation = calculateEvaporation(_addr);
             if (evaporation > 0) {
                 balances[_addr].amount = 
                     balances[_addr].amount.sub(evaporation); // pay evaporation
-                balances[_addr].lastEvaporationBlock = lastRainBlock();
+                balances[_addr].lastEvaporationTime = lastRainTime();
                 totalSupply = totalSupply.sub(evaporation);
             }
         }
@@ -488,7 +475,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     }
     
     // TODO: DELETE THIS FOR PRODUCTION
-    function blockNumber() public view returns (uint256) {
-        return block.number;
+    function blockTime() public view returns (uint256) {
+        return block.timestamp;
     }
 }

@@ -115,6 +115,10 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
         pendingEvaporation is ${pendingEvaporation}`
       );
     });
+
+    it('should return 0 when all coins have evaporated', async () => {
+      assert(false, 'not implemented');
+    });
   });
     
   describe('transfer()', () => {
@@ -652,5 +656,5 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       assert(false, 'not implemented');
     });
   });
-  
+
 });
