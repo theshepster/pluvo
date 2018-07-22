@@ -295,8 +295,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @notice Increase message sender's balance by amount of available rain.
     /// @notice Requires that message sender is authorized.
     /// @notice Collection first performs any evaporation.
+    /// @notice This function allows user to specify the maximum number of
+    /// rainfalls to collect, thereby saving gas if there are many rainfalls
+    /// to collect.
+    /// @param maxCollections maximum number of rainfalls to collect
     /// @return Amount collected.
-    function collect() public returns (uint256 fundsCollected) {
+    function collectRainfalls(uint256 maxCollections) 
+        public returns (uint256 fundsCollected) {
         // ensure message sender is authorized
         require(rainees[msg.sender] > 0);
 
@@ -308,9 +313,16 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         uint256 currentRainfall = currentRainfallIndex();
         require(currentRainfall > currentRainfallOfSender);
 
+        // determine upper limit of rainfalls to collect
+        uint256 upperLimit;
+        if (currentRainfall.sub(currentRainfallOfSender) > maxCollections)
+            upperLimit = currentRainfallOfSender + maxCollections;
+        else
+            upperLimit = currentRainfall;
+
         // calculate amount available to collect
         // subtract evaporation before collection
-        for (uint256 i = currentRainfallOfSender; i < currentRainfall; i++) {
+        for (uint256 i = currentRainfallOfSender; i < upperLimit; i++) {
             uint256 amt = rainfallPayouts[i].amount;
             uint256 blk = rainfallPayouts[i].rainBlock;
             fundsCollected = 
@@ -327,14 +339,22 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             balances[msg.sender].amount.add(fundsCollected);
         
         // update recipient's last rainfall collection index
-        rainees[msg.sender] = currentRainfall;
+        rainees[msg.sender] = upperLimit;
 
         // update total supply
         totalSupply = totalSupply.add(fundsCollected);
 
         // implied: return fundsCollected;
     }
-    
+
+    /// @notice Increase message sender's balance by amount of available rain.
+    /// @notice Requires that message sender is authorized.
+    /// @notice Collection first performs any evaporation.
+    /// @return Amount collected.
+    function collect() public returns (uint256 fundsCollected) {
+        return collectRainfalls(MAX_UINT256);
+    }
+
     /// @notice Store rainfall payout(s) due since last rainfall.
     /// @notice If multiple rainfalls should have occurred, store the rain 
     /// from each of them.
