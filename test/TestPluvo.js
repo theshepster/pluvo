@@ -388,78 +388,6 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     });
   });
 
-  describe('approve()', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('allowance()', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('rainees getter function', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('rainfallPayouts getter function', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('evaporationRate getter function', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('blocksBetweenRainfalls getter function', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('maxSupply getter function', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('numberOfRainees getter function', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('currentRainfallIndex()', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('rainPerRainfallPerPerson()', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('setEvaporationRate()', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
-  describe('setRainfallFrequency()', () => {
-    it('', async () => {
-      assert(false, 'not implemented');
-    });
-  });
-
   describe('registerAddress()', () => {
     let pluvo;
 
@@ -559,6 +487,78 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
         (await pluvo.numberOfRainees()).eq(BigNumber(1)),
         "There should still be one address registered"
       );
+    });
+  });
+ 
+  describe('approve()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('allowance()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('rainees getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('rainfallPayouts getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('evaporationRate getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('blocksBetweenRainfalls getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('maxSupply getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('numberOfRainees getter function', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('currentRainfallIndex()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('rainPerRainfallPerPerson()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('setEvaporationRate()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('setRainfallFrequency()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
     });
   });
 
