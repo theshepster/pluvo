@@ -93,10 +93,18 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       assert(balance1.lt(balance0));
     });
 
-    it('should decrease between successive blocks', async () => {
+    it('should decrease between successive rain blocks', async () => {
       await pluvo.rain(); // force block to be mined
       const balance1 = await pluvo.balanceOf(owner);
       assert(balance1.lt(balance0));
+    });
+
+    it('should not decrease between nonrain blocks', async () => {
+      await pluvo.setRainfallPeriod(4, { from: owner });
+      const balance1 = await pluvo.balanceOf(owner);
+      await pluvo.rain(); // force block to be mined
+      const balance2 = await pluvo.balanceOf(owner);
+      assert(balance2.eq(balance1));
     });
 
     it('should incorporate pending evaporation', async () => {
@@ -111,11 +119,9 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
 
       assert(
         ownerRawBalance.minus(pendingEvaporation).eq(ownerBalance),
-        `
-          ownerRawBalance is ${ownerRawBalance}, 
-          ownerBalance is ${ownerBalance}, 
-          pendingEvaporation is ${pendingEvaporation}
-        `
+        `ownerRawBalance is ${ownerRawBalance}, 
+        ownerBalance is ${ownerBalance}, 
+        pendingEvaporation is ${pendingEvaporation}`
       );
     });
   });
@@ -356,6 +362,19 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       );
     });
 
+    it('allowance is reduced by the transfer amount', async () => {
+      const amount = 10;
+      const allowance0 = await pluvo.allowance(owner, spender);
+      await pluvo.transferFrom(owner, to, amount, { from: spender });
+      const allowance1 = await pluvo.allowance(owner, spender);
+      assert(
+        allowance1.plus(BigNumber(amount)).eq(allowance0),
+        `allowance0 is ${allowance0}, 
+        allowance1 is ${allowance1}, 
+        amount to send is ${amount}`
+      );
+    });
+
     it('emits a transfer event', async () => {
       const amount = 10;
       const { logs } = 
@@ -556,6 +575,12 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
   });
 
   describe('collect()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+
+  describe('collectRainfalls()', () => {
     it('', async () => {
       assert(false, 'not implemented');
     });
