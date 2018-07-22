@@ -232,6 +232,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     ) public onlyBy(parameterSetter) {
         require(_evaporationDenominator >= _evaporationRate);
         require(_evaporationDenominator > 0);
+        rain();
         evaporationRate = _evaporationRate;
         evaporationDenominator = _evaporationDenominator;
     }
