@@ -1,15 +1,6 @@
 const Pluvo = artifacts.require("./Pluvo.sol");
 const BigNumber = require('bignumber.js');
-
-async function assertRevert(promise) {
-  try {
-    await promise;
-    assert.fail('Expected revert not received');
-  } catch (error) {
-    const revertFound = error.message.search('revert') >= 0;
-    assert(revertFound, `Expected "revert", got ${error} instead`);
-  }
-}
+const {assertRevert, increaseTime, mineBlock} = require('./helpers.js');
 
 contract('Pluvo', async ([owner, recipient, spender]) => {
   let pluvo;
@@ -502,82 +493,82 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
   });
 
 
-describe('collect()', () => {
+  describe('collect()', () => {
 
-  beforeEach(async () => {
+    it('reverts for unregistered address', async () => {
+      await assertRevert(pluvo.collect({ from: owner }));
+    });
+
+    it('reverts when there has not been rain', async () => {
+      await pluvo.setRainfallPeriod(10, { from: owner });
+      await pluvo.registerAddress(owner, { from: owner });
+      await assertRevert(pluvo.collect({ from: owner }));
+    });
+
+    it('reverts when rain came before registration', async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+      await pluvo.setRainfallPeriod(10, { from: owner }); // causes rain
+      await pluvo.registerAddress(recipient, { from: owner });
+      await assertRevert(pluvo.collect({ from: recipient }));
+    });
+
+    it('collects multiple rainfalls if available', async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+      const firstRainAmt = await pluvo.rain();
+      await pluvo.rain();
+      const collected = await pluvo.collect({ from: owner }); // causes rain
+      assert(collected.gt(firstRainAmt));
+    });
+
+    it('rains before collection, if it is past time to rain', async () => {
+      assert(false, 'not implemented');
+    });
+
+    it('evaporates stored rain', async () => {
+      assert(false, 'not implemented');
+    });
+
+    it('evaporates from address after collection', async () => {
+      assert(false, 'not implemented');
+    });
+
+    it('increases total supply', async () => {
+      assert(false, 'not implemented');
+    });
+
+    it('increases address balance by collected amount', async () => {
+      assert(false, 'not implemented');
+    });
+
+    it('returns amount of funds collected', async () => {
+      assert(false, 'not implemented');
+    });
+  });
+  
+  describe('collectRainfalls()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
 
-  it('reverts for unregistered address', async () => {
-    await assertRevert(pluvo.collect({ from: owner }));
+  describe('rain()', () => {
+    it('totalSupply never exceeds maximum supply', async () => {
+      assert(false, 'not implemented');
+    });
   });
 
-  it('does not collect when there has not been rain', async () => {
-    await pluvo.setRainfallPeriod(10, { from: owner });
-    await pluvo.registerAddress(owner, { from: owner });
-    const collected = await pluvo.collect({ from: owner });
-    assert(collected.eq(BigNumber(0)), `collected ${collected}`);
+  describe('calculateEvaporation()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
 
-  it('does not collect when rain came before registration', async () => {
-    await pluvo.registerAddress(owner, { from: owner });
-    await pluvo.setRainfallPeriod(10, { from: owner }); // causes rain
-    await pluvo.registerAddress(recipient, { from: owner });
-    const collected = await pluvo.collect({ from: recipient });
-    assert(collected.eq(BigNumber(0)), `collected ${collected}`);
+  describe('evaporate()', () => {
+    it('', async () => {
+      assert(false, 'not implemented');
+    });
   });
 
-  it('collects multiple rainfalls if available', async () => {
-    await pluvo.registerAddress(owner, { from: owner });
-  });
-
-  it('rains before collection, if it is past time to rain', async () => {
-    assert(false, 'not implemented');
-  });
-
-  it('evaporates stored rain', async () => {
-    assert(false, 'not implemented');
-  });
-
-  it('evaporates from address after collection', async () => {
-    assert(false, 'not implemented');
-  });
-
-  it('increases total supply', async () => {
-    assert(false, 'not implemented');
-  });
-
-  it('increases address balance by collected amount', async () => {
-    assert(false, 'not implemented');
-  });
-
-  it('returns amount of funds collected', async () => {
-    assert(false, 'not implemented');
-  });
-});
-
-describe('collectRainfalls()', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
-  });
-});
-
-describe('rain()', () => {
-  it('totalSupply never exceeds maximum supply', async () => {
-    assert(false, 'not implemented');
-  });
-});
-
-describe('calculateEvaporation()', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
-  });
-});
-
-describe('evaporate()', () => {
-  it('', async () => {
-    assert(false, 'not implemented');
-  });
-});
   describe('rainees getter function', () => {
     it('', async () => {
       assert(false, 'not implemented');
@@ -661,5 +652,5 @@ describe('evaporate()', () => {
       assert(false, 'not implemented');
     });
   });
-
+  
 });
