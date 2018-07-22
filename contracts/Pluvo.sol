@@ -2,9 +2,11 @@ pragma solidity ^0.4.24;
 pragma experimental "v0.5.0";
 
 import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
-            
+    using SafeMath for uint256;
+
     /*--------- CONSTANTS ---------*/
     
     uint256 constant private MAX_UINT256 = 2**256 - 1;
@@ -78,8 +80,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         evaporate(_to);
         
         // send funds
-        balances[msg.sender].amount -= _value;
-        balances[_to].amount += _value;
+        balances[msg.sender].amount = balances[msg.sender].amount.sub(_value);
+        balances[_to].amount = balances[_to].amount.add(_value);
         emit Transfer(msg.sender, _to, _value);
         return true;
     }
@@ -108,10 +110,11 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         evaporate(_to);
         
         // the _from address then pays the recipient
-        balances[_to].amount += _value;
-        balances[_from].amount -= _value;
+        balances[_from].amount = balances[_from].amount.sub(_value);
+        balances[_to].amount = balances[_to].amount.add(_value);
         if (allowance < MAX_UINT256) {
-            allowed[_from][msg.sender] -= _value;
+            allowed[_from][msg.sender] =
+                allowed[_from][msg.sender].sub(_value);
         }
         emit Transfer(_from, _to, _value);
         return true;
@@ -124,7 +127,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @param _owner The address from which the balance will be retrieved.
     /// @return The balance as if evaporation been paid.
     function balanceOf(address _owner) public view returns (uint256 balance) {
-        return balances[_owner].amount - calculateEvaporation(_owner);
+        return balances[_owner].amount.sub(calculateEvaporation(_owner));
     }
 
     /// @notice `msg.sender` approves `_spender` to spend `_value` tokens
@@ -204,7 +207,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @notice Determine the last block when rain happened
     /// @return Last block number when rain happened
     function lastRainBlock() public view returns (uint256) {
-        return rainfallPayouts[currentRainfallIndex() - 1].rainBlock;
+        return rainfallPayouts[currentRainfallIndex().sub(1)].rainBlock;
     }
 
     /// @notice Determine the total amount of rainfall due to each recipient 
@@ -212,12 +215,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @return Total rainfall due in a rainfall to each registered address.
     function rainPerRainfallPerPerson() public view returns (uint256) {
         require(numberOfRainees > 0);
+        maxSupply.mul(blocksBetweenRainfalls).mul(evaporationRate).div(evaporationDenominator).div(numberOfRainees);
         return 
-            maxSupply *
-            blocksBetweenRainfalls * 
-            evaporationRate /
-            evaporationDenominator /
-            numberOfRainees;
+            maxSupply
+            .mul(blocksBetweenRainfalls)
+            .mul(evaporationRate)
+            .div(evaporationDenominator)
+            .div(numberOfRainees);
     }
     
     /// @notice Set the evaporation rate numerator and denominator.
@@ -253,7 +257,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         if (rainees[_rainee] == 0) {
             rain(); // rain first, if enough time has elapsed
             rainees[_rainee] = currentRainfallIndex();
-            numberOfRainees++;
+            numberOfRainees = numberOfRainees.add(1);
             return true;
         }
         return false;
@@ -271,7 +275,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         if (rainees[_rainee] > 0) {
             rain(); // rain first, if enough time has elapsed
             delete rainees[_rainee];
-            numberOfRainees--;
+            numberOfRainees = numberOfRainees.sub(1);
             return true;
         }
         return false;
@@ -309,7 +313,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         for (uint256 i = currentRainfallOfSender; i < currentRainfall; i++) {
             uint256 amt = rainfallPayouts[i].amount;
             uint256 blk = rainfallPayouts[i].rainBlock;
-            fundsCollected += amt - calculateEvaporation(amt, blk);
+            fundsCollected = 
+                fundsCollected.add(amt).sub(calculateEvaporation(amt, blk));
         }
 
         // evaporate from message sender
@@ -318,13 +323,14 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         evaporate(msg.sender);
         
         // pay collection to recipient
-        balances[msg.sender].amount += fundsCollected;
+        balances[msg.sender].amount = 
+            balances[msg.sender].amount.add(fundsCollected);
         
         // update recipient's last rainfall collection index
         rainees[msg.sender] = currentRainfall;
 
         // update total supply
-        totalSupply += fundsCollected;
+        totalSupply = totalSupply.add(fundsCollected);
 
         // implied: return fundsCollected;
     }
@@ -336,19 +342,19 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     function rain() public returns (uint256 rainAmount) {
         if (numberOfRainees > 0) {
             uint256 rainfallsDue =
-                (block.number - lastRainBlock()) / blocksBetweenRainfalls;
+                block.number.sub(lastRainBlock()).div(blocksBetweenRainfalls);
     
             // store per-person rainfall amount 
             // also note that, due to integer division, 
             // lastRainBlock() + (blocksBetweenRainfalls * rainfallsDue)
             // is not necessarily equal to block.number 
             if (rainfallsDue > 0) {
-                rainAmount = rainPerRainfallPerPerson() * rainfallsDue;
+                rainAmount = rainPerRainfallPerPerson().mul(rainfallsDue);
                 rainfallPayouts.push(
                     Rain(
                         rainAmount, 
-                        lastRainBlock() + 
-                        (blocksBetweenRainfalls * rainfallsDue)
+                        blocksBetweenRainfalls.mul(rainfallsDue)
+                        .add(lastRainBlock())
                     )
                 );
             }
@@ -370,17 +376,20 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             return 0;
         
         uint256 elapsedEvaporations = 
-            (block.number - lastBlock) / blocksBetweenRainfalls;
+            block.number.sub(lastBlock).div(blocksBetweenRainfalls);
 
         // due to integer division, elapsedBlocks does not necessarily equal
         // block.number - lastBlock
-        uint256 elapsedBlocks = elapsedEvaporations * blocksBetweenRainfalls;
+        uint256 elapsedBlocks = 
+            elapsedEvaporations.mul(blocksBetweenRainfalls);
 
-        uint256 q = evaporationDenominator / evaporationRate;
+        uint256 q = evaporationDenominator.div(evaporationRate);
         uint256 precision = 8; // higher precision costs more gas
-        uint256 maxEvaporation = balance - 
-            fractionalExponentiation(
-                balance, q, elapsedBlocks, true, precision
+        uint256 maxEvaporation = 
+            balance.sub( 
+                fractionalExponentiation(
+                    balance, q, elapsedBlocks, true, precision
+                )
             );
         if (maxEvaporation > balance)
             return balance;
@@ -418,9 +427,10 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             assert(balances[_addr].lastEvaporationBlock > 0); 
             uint256 evaporation = calculateEvaporation(_addr);
             if (evaporation > 0) {
-                balances[_addr].amount -= evaporation; // pay evaporation
+                balances[_addr].amount = 
+                    balances[_addr].amount.sub(evaporation); // pay evaporation
                 balances[_addr].lastEvaporationBlock = lastRainBlock();
-                totalSupply -= evaporation; // update totalSupply
+                totalSupply = totalSupply.sub(evaporation);
             }
         }
     }
