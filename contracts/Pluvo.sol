@@ -159,7 +159,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     address public registrar;
     
     // authorized recipients of rain, 
-    // mapping from address to last rainfall collected
+    // mapping from address to index of last rainfall collected
     mapping (address => uint256) public rainees;
     
     // used to store the amount and time for each rainfall
