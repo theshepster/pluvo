@@ -185,6 +185,11 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     uint256 public numberOfRainees;
     
 
+    /*--------- Pluvo events ---------*/
+
+    event Collection(address indexed recipient, uint256 amount);
+
+
     /*--------- Pluvo functions ---------*/
     
     /// @notice Counts 1 more than the number of past rainfalls. This is 
@@ -338,6 +343,9 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
 
         // update total supply
         totalSupply = totalSupply.add(fundsCollected);
+
+        // emit event so web3.js can see what happened
+        emit Collection(msg.sender, fundsCollected);
 
         // implied: return fundsCollected;
     }
