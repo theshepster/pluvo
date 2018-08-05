@@ -3,8 +3,8 @@ var Pluvo = artifacts.require("./Pluvo.sol");
 // TODO: UPDATE THESE PARAMETERS BEFORE LIVENET DEPLOYMENT
 const maxSupply = 100;
 const evaporationRate = 1;
-const evaporationDenominator = 4;
-const blocksBetweenRainfalls = 1;
+const evaporationDenominator = 10;
+const secondsBetweenRainfalls = 30;
 
 module.exports = function(deployer) {
   deployer.deploy(
@@ -12,6 +12,6 @@ module.exports = function(deployer) {
     maxSupply, 
     evaporationRate, 
     evaporationDenominator, 
-    blocksBetweenRainfalls
+    secondsBetweenRainfalls
   );
 };
