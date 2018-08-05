@@ -241,6 +241,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// secondsBetweenRainfalls.
     function setRainfallPeriod(uint256 _secondsBetweenRainfalls) 
         public onlyBy(parameterSetter) {
+        require(_secondsBetweenRainfalls > 0);
         rain();
         secondsBetweenRainfalls = _secondsBetweenRainfalls;
     }
