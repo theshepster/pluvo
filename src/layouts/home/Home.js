@@ -3,8 +3,6 @@ import { AccountData, ContractData, ContractForm } from 'drizzle-react-component
 import logo from '../../logo.png'
 
 const symbol = <ContractData contract="Pluvo" method="symbol" hideIndicator />;
-const registrar = <ContractData contract="Pluvo" method="registrar" />;
-const parameterSetter = <ContractData contract="Pluvo" method="parameterSetter" />;
 
 class Home extends Component {
   render() {
@@ -31,7 +29,10 @@ class Home extends Component {
             
             <h2>Account Actions</h2>
 
-            <h3>Collect</h3>
+            <h3>Collect Rain</h3>
+            <ContractForm contract="Pluvo" method="collectRainfalls" labels={['Number of Rainfalls to Collect']} />
+
+            <h3>Collect All Available Rain</h3>
             <ContractForm contract="Pluvo" method="collect" />
 
             <h3>Send Tokens</h3>
