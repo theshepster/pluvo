@@ -306,6 +306,9 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         // ensure message sender is authorized
         require(rainees[msg.sender] > 0);
 
+        // ensure the sender wants to collect rain
+        require(maxCollections > 0);
+
         // rain, if necessary
         rain(); // rain() only rains if enough time has elapsed
         
