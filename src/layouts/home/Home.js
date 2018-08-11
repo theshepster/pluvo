@@ -38,8 +38,8 @@ class Home extends Component {
             <h3>Send Tokens</h3>
             <ContractForm contract="Pluvo" method="transfer" labels={['To Address', 'Amount to Send']} />
 
-          </div>
-          
+          </div>        
+
         </div>
       </main>
     )
