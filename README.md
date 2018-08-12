@@ -180,13 +180,13 @@ To connect MetaMask to your Ganache private keys, from the MetaMask login screen
 
 Now that you are logged in, you should see your first account, called Account 1, have a balance of 100 Ether. If you do not, click in the upper-right-hand corner of MetaMask and double check that your network is pointing to Localhost 8545. **Never use the Ganache-CLI accounts with any other network in MetaMask. Localhost 8545 only!**
 
-You are ready to deploy and test Pluvo. In a terminal window within the /pluvo directory, enter the following commands in order:
+You are ready to deploy and test Pluvo. In a terminal window within the pluvo/ directory, enter the following commands in order:
 ```
 truffle compile
 truffle migrate
 npm run start
 ```
-The first command, `truffle compile`, compiles the Solidity contracts into JSON files that can be deployed to the blockchain. The compiled contracts live in the /build/contracts directory. If you make any changes to the `Pluvo.sol` file, run `truffle compile` to prepare the updated contract for deployment.
+The first command, `truffle compile`, compiles the Solidity contracts into JSON files that can be deployed to the blockchain. The compiled contracts live in the build/contracts directory. If you make any changes to the `Pluvo.sol` file, run `truffle compile` to prepare the updated contract for deployment.
 
 The second command, `truffle migrate`, deploys the compiled contracts to the custom ganache-cli blockchain that is running in the other terminal window. Truffle knows to deploy to the ganache-cli blockchain because in the `truffle.js` file, the development network is set to host 127.0.0.1 port 8545, which is where the ganache-cli blockchain is connected.
 
@@ -197,7 +197,7 @@ Before deploying with `truffle migrate`, feel free to edit the Pluvo parameters 
     const evaporationDenominator;
     const secondsBetweenRainfalls;
 
-The last command, `npm run start`, runs the `/scripts/start.js` script. It compiles the user interface serves it up to port 3000. It uses hot-reloading, so any changes you make to the user interface will load automatically without requiring recompilation.
+The last command, `npm run start`, runs the `scripts/start.js` script. It compiles the user interface serves it up to port 3000. It uses hot-reloading, so any changes you make to the user interface will load automatically without requiring recompilation.
 
 After several seconds, a browser window should open pointing to localhost:3000. Pluvo is yours for the testing.
 
@@ -206,3 +206,17 @@ After several seconds, a browser window should open pointing to localhost:3000. 
 The GanacheCLI blockchain gives you 10 accounts. The first account will be the account that deploys the contracts to the blockchain, so you should see that, after deployment, the ETH balance of Acccount 1 is less than 100. This is because some ETH was spent to deploy the contracts. Additionally, in Pluvo, the `parameterSetter` and `registrar` addresses will be set to Account 1.
 
 In order to play around with aditional accounts, within MetaMask click on Add Accounts. Because the ganache-cli tool uses an HD wallet, the second account that MetaMask generates for you will automatically be the second account that ganache-cli created for you, meaning it will be pre-funded with 100 ETH.
+
+To run the test suite, run one of the following two commands. If the ganache-cli blockchain is already running in the background, then at the terminal, from the pluvo/ directory, enter:
+    
+    truffle test
+
+This will compile the contracts, deploy them to the running ganache-cli blockchain, and then run all the tests in the test/ directory. If you only want to run a single test file, for example, `TestPluvo.js`, then type:
+
+    truffle test ./test/TestPluvo.js
+
+Alternatively, if there is no ganache-cli blockchain already running, enter:
+
+    npm run test
+
+This will launch a ganache-cli instance in the background, run `truffle test`, and then kill the ganache-cli instance.
