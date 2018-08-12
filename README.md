@@ -190,6 +190,13 @@ The first command, `truffle compile`, compiles the Solidity contracts into JSON 
 
 The second command, `truffle migrate`, deploys the compiled contracts to the custom ganache-cli blockchain that is running in the other terminal window. Truffle knows to deploy to the ganache-cli blockchain because in the `truffle.js` file, the development network is set to host 127.0.0.1 port 8545, which is where the ganache-cli blockchain is connected.
 
+Before deploying with `truffle migrate`, feel free to edit the Pluvo parameters in `migrations/2_deploy_contracts.js`. The four parameters to edit are:
+
+    const maxSupply;
+    const evaporationNumerator;
+    const evaporationDenominator;
+    const secondsBetweenRainfalls;
+
 The last command, `npm run start`, runs the `/scripts/start.js` script. It compiles the user interface serves it up to port 3000. It uses hot-reloading, so any changes you make to the user interface will load automatically without requiring recompilation.
 
 After several seconds, a browser window should open pointing to localhost:3000. Pluvo is yours for the testing.
