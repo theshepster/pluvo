@@ -793,15 +793,46 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     });
   });
 
-  describe('reasonable gas costs', () => {
-    it('collect() gas cost is not too high', async () => {
-      await pluvo.registerAddress(owner, { from: owner });
-      increaseTime(elapsedTime*5);
-      const { receipt } = await pluvo.collect(); // rains
-      console.log(receipt);
-      assert(true);
-    });
-  });
+  // describe('reasonable gas costs', () => {
+    // it('rain() gas cost is not too high', async () => {
+    //   await pluvo.registerAddress(owner, { from: owner });
+    //   increaseTime(elapsedTime*10);
+    //   const { receipt } = await pluvo.rain(); // rains
+    //   console.log(receipt);
+    //   assert(true);
+    // });
+
+    // it('evaporation gas cost is not too high (tested on a 0 transfer)', async () => {
+    //   await pluvo.registerAddress(owner, { from: owner });
+    //   increaseTime(elapsedTime);
+    //   await pluvo.collect(); // rains
+    //   var { receipt } = await pluvo.transfer(recipient, 0);
+    //   const gas0 = receipt.gasUsed;
+    //   increaseTime(elapsedTime*10);
+    //   var { receipt } = await pluvo.transfer(recipient, 0);
+    //   const gas1 = receipt.gasUsed;
+    //   assert.isBelow(gas1-gas0, 3000);
+    // });
+
+    // it('collect() without rain gas cost is not too high', async () => {
+    //   await pluvo.registerAddress(owner, { from: owner });
+    //   increaseTime(elapsedTime);
+    //   await pluvo.rain();
+    //   const { receipt } = await pluvo.collect(); // no rain
+    //   console.log(receipt);
+    //   assert(true);
+    // });
+
+    // it('collection of multiple previous rains gas cost is not too high', async () => {
+    //   await pluvo.registerAddress(owner, { from: owner });
+    //   increaseTime(elapsedTime*10);
+    //   await pluvo.rain();
+    //   const { receipt } = await pluvo.collect(); // no rain
+    //   console.log(receipt);
+    //   assert(true);
+    // });
+
+  // });
 
   // describe('calculateEvaporation()', () => {
   //   it('', async () => {

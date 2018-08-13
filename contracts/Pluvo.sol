@@ -362,27 +362,39 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         return collectRainfalls(MAX_UINT256);
     }
 
+    /// @notice Calculate number of rainfalls due if rain() gets called
+    /// @return rainfallsDue Number of rainfalls due in next rain()
+    function rainfallsDue() public returns (uint256) {
+        return block.timestamp.sub(lastRainTime()).div(secondsBetweenRainfalls);
+    }
+
+    /// @notice Store one rainfall payout, without error checking
+    function rainOnceForce() private {
+        rainfallPayouts.push(
+            Rain(
+                rainPerRainfallPerPerson(), 
+                secondsBetweenRainfalls.add(lastRainTime())
+            )
+        );
+    }
+
+    /// @notice Store one rainfall payout.
+    /// @notice Addresses can call this function to store one rainfall payout
+    /// if calling rain() would cost too much gas (e.g., if it has been many
+    /// periods since the last rainfall)
+    function rainOnce() public {
+        if (numberOfRainees > 0 && rainfallsDue() > 0)
+            rainOnceForce();
+    }
+
     /// @notice Store rainfall payout(s) due since last rainfall.
     /// @notice If multiple rainfalls should have occurred, store the rain 
     /// from each of them.
-    /// @return True if enough time had elapsed since last rainfall.
-    function rain() public returns (uint256 rainfallsDue) {
+    function rain() public {
         if (numberOfRainees > 0) {
-            rainfallsDue =
-                block.timestamp
-                .sub(lastRainTime())
-                .div(secondsBetweenRainfalls);
-    
-            // store per-person rainfall amount.
-            // note that lastRainTime() updates after each push
-            for (uint256 i = 1; i <= rainfallsDue; i++) {
-                rainfallPayouts.push(
-                    Rain(
-                        rainPerRainfallPerPerson(), 
-                        secondsBetweenRainfalls.add(lastRainTime())
-                    )
-                );
-            }
+            uint256 rainfallsDue = rainfallsDue();
+            for (uint256 i = 1; i <= rainfallsDue; i++)
+                rainOnceForce();
         }
     }
     
