@@ -5,6 +5,7 @@ const {assertRevert, increaseTime, mineBlock} = require('./helpers.js');
 contract('Pluvo', async ([owner, recipient, spender]) => {
   let pluvo;
   let elapsedTime;
+  let oneCollection;
 
   beforeEach(async () => {
     const maxSupply = 100;
@@ -12,6 +13,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     const denominator = 4;
     elapsedTime = 100;
     pluvo = await Pluvo.new(maxSupply, numerator, denominator, elapsedTime);
+    oneCollection = BigNumber(maxSupply * numerator / denominator);
   });
 
   describe('totalSupply()', () => { 
@@ -593,8 +595,6 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
 
   describe('collect()', () => {
 
-    const oneCollection = BigNumber(25); // assumes evap params are 1 and 4
-
     it('reverts for unregistered address', async () => {
       await assertRevert(pluvo.collect({ from: owner }));
     });
@@ -679,8 +679,6 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
   });
   
   describe('collectRainfalls()', () => {
-
-    const oneCollection = BigNumber(25); // assumes evap params are 1 and 4
 
     it('collects only the requested number of rainfalls and no more', async () => {
       const balance0 = await pluvo.balanceOf(owner);
@@ -793,54 +791,131 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     });
   });
 
-  // describe('reasonable gas costs', () => {
-    // it('rain() gas cost is not too high', async () => {
-    //   await pluvo.registerAddress(owner, { from: owner });
-    //   increaseTime(elapsedTime*10);
-    //   const { receipt } = await pluvo.rain(); // rains
-    //   console.log(receipt);
-    //   assert(true);
-    // });
+  describe('reasonable gas costs', () => {
 
-    // it('evaporation gas cost is not too high (tested on a 0 transfer)', async () => {
-    //   await pluvo.registerAddress(owner, { from: owner });
-    //   increaseTime(elapsedTime);
-    //   await pluvo.collect(); // rains
-    //   var { receipt } = await pluvo.transfer(recipient, 0);
-    //   const gas0 = receipt.gasUsed;
-    //   increaseTime(elapsedTime*10);
-    //   var { receipt } = await pluvo.transfer(recipient, 0);
-    //   const gas1 = receipt.gasUsed;
-    //   assert.isBelow(gas1-gas0, 3000);
-    // });
+    const maxGas = 150000;
 
-    // it('collect() without rain gas cost is not too high', async () => {
-    //   await pluvo.registerAddress(owner, { from: owner });
-    //   increaseTime(elapsedTime);
-    //   await pluvo.rain();
-    //   const { receipt } = await pluvo.collect(); // no rain
-    //   console.log(receipt);
-    //   assert(true);
-    // });
+    beforeEach(async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+      increaseTime(elapsedTime);
+    });
 
-    // it('collection of multiple previous rains gas cost is not too high', async () => {
-    //   await pluvo.registerAddress(owner, { from: owner });
-    //   increaseTime(elapsedTime*10);
-    //   await pluvo.rain();
-    //   const { receipt } = await pluvo.collect(); // no rain
-    //   console.log(receipt);
-    //   assert(true);
-    // });
+    it('rain() gas cost is not too high', async () => {
+      const { receipt } = await pluvo.rain(); // rains
+      assert.isBelow(receipt.gasUsed, maxGas);
+    });
 
-  // });
+    it('evaporation gas cost is not too high (tested on a 0 transfer)', async () => {
+      await pluvo.collect(); // rains
+      var { receipt } = await pluvo.transfer(recipient, 0);
+      const gas0 = receipt.gasUsed;
+      increaseTime(elapsedTime*10);
+      var { receipt } = await pluvo.transfer(recipient, 0);
+      const gas1 = receipt.gasUsed;
+      assert.isBelow(gas1-gas0, 3000);
+    });
 
-  // describe('calculateEvaporation()', () => {
+    it('collect() without rain gas cost is not too high', async () => {
+      await pluvo.rain();
+      const { receipt } = await pluvo.collect(); // no rain
+      assert.isBelow(receipt.gasUsed, maxGas);
+    });
+
+    it('collection of 10 previous rains gas cost is not too high', async () => {
+      increaseTime(elapsedTime*10);
+      await pluvo.rain();
+      const { receipt } = await pluvo.collect(); // no rain
+      assert.isBelow(receipt.gasUsed, maxGas);
+    });
+
+  });
+
+  describe('rainOnce()', () => {
+
+    beforeEach(async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+    });
+
+    it('does not rain if not enough time has passed', async () => {
+      const rainfallIndex0 = await pluvo.currentRainfallIndex();
+      increaseTime(elapsedTime/2);
+      await pluvo.rainOnce();
+      const rainfallIndex1 = await pluvo.currentRainfallIndex();
+      assert(rainfallIndex0.eq(rainfallIndex1), `RainfallIndex0 = ${rainfallIndex0}, it should equal RainfallIndex1 = ${rainfallIndex1}`);
+    });
+
+    it('rains if enough time has passed', async () => {
+      const rainfallIndex0 = await pluvo.currentRainfallIndex();
+      increaseTime(elapsedTime);
+      await pluvo.rainOnce();
+      const rainfallIndex1 = await pluvo.currentRainfallIndex();
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+    });
+
+    it('rains exactly once if multiple periods have passed', async () => {
+      const rainfallIndex0 = await pluvo.currentRainfallIndex();
+      increaseTime(elapsedTime*4);
+      await pluvo.rainOnce();
+      const rainfallIndex1 = await pluvo.currentRainfallIndex();
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+    });
+
+    it('prevents rain() from raining again', async () => {
+      const rainfallIndex0 = await pluvo.currentRainfallIndex();
+      increaseTime(elapsedTime);
+      await pluvo.rainOnce();
+      await pluvo.rain(); // should not rain
+      const rainfallIndex1 = await pluvo.currentRainfallIndex();
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+    });
+
+    it('pushes the right amount onto the rainfallPayouts array', async () => {
+      increaseTime(elapsedTime);
+      await pluvo.rainOnce();
+      const rainAmount = (await pluvo.rainfallPayouts(1))[0];
+      assert(rainAmount.eq(oneCollection), `Rained ${rainAmount}, it should have rained ${oneCollection}`);
+    });
+  });
+
+  describe('calculateEvaporation()', () => {
+
+    beforeEach(async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+      increaseTime(elapsedTime);
+      await pluvo.collect(); // rains
+    });
+  
+    it('returns balance if maxEvaporations exceeds balance', async () => {
+      increaseTime(elapsedTime*50); // at 1/4 per elapsedTime, 50 is big enough
+      const evaporated = await pluvo.calculateEvaporation(owner);
+      assert(evaporated.eq(oneCollection), `Evaporated ${evaporated}, but should have only evaporaed ${oneCollection}`);
+    });
+
+    it('returns 0 if evaporationNumerator = 0', async () => {
+      await pluvo.setEvaporationRate(0,5);
+      increaseTime(elapsedTime*5);
+      const evaporated = await pluvo.calculateEvaporation(owner);
+      assert(evaporated.eq(BigNumber(0)), `Evaporated ${evaporated}, but should have evaporated 0`);
+    });
+
+    it('reverts if time parameter is in the future', async () => {
+      assert(true, 'not implemented');
+    });
+  });
+
+  // describe('fractionalExponentiation()', () => {
   //   it('', async () => {
   //     assert(false, 'not implemented');
   //   });
   // });
 
   // describe('evaporate()', () => {
+  //   it('', async () => {
+  //     assert(false, 'not implemented');
+  //   });
+  // });
+
+  // describe('lastRainTime()', () => {
   //   it('', async () => {
   //     assert(false, 'not implemented');
   //   });
@@ -919,12 +994,6 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
   // });
 
   // describe('when contracted is first constructed', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
-
-  // describe('fractionalExponentiation()', () => {
   //   it('', async () => {
   //     assert(false, 'not implemented');
   //   });

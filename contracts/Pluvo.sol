@@ -474,7 +474,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @notice Computes `k * (1-1/q) ^ n`, with precision `p`, for b = true
     /// @notice Small values of p get a close approimation
     /// @param k coefficient
-    /// @param q divisor (e.g., for 1.02^n, q = 100)
+    /// @param q divisor (e.g., for 1.02^n, q = 50)
     /// @param n exponent
     /// @param b negative toggle (e.g., b = true for 0.99^n,
     /// b = false for 1.01^n)
@@ -495,7 +495,10 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             N = N * (n-i);
             B = B * (i+1);
         }
-        return s;
+        if (s > k)
+            return 0;
+        else
+            return s;
     }
     
     // TODO: DELETE THIS FOR PRODUCTION
