@@ -364,7 +364,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
 
     /// @notice Calculate number of rainfalls due if rain() gets called
     /// @return rainfallsDue Number of rainfalls due in next rain()
-    function rainfallsDue() public returns (uint256) {
+    function rainfallsDue() public view returns (uint256) {
         return block.timestamp.sub(lastRainTime()).div(secondsBetweenRainfalls);
     }
 
@@ -392,8 +392,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// from each of them.
     function rain() public {
         if (numberOfRainees > 0) {
-            uint256 rainfallsDue = rainfallsDue();
-            for (uint256 i = 1; i <= rainfallsDue; i++)
+            uint256 maxRainfalls = rainfallsDue();
+            for (uint256 i = 1; i <= maxRainfalls; i++)
                 rainOnceForce();
         }
     }
