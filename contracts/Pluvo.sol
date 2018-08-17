@@ -37,6 +37,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         require(_maxSupply > 0);
         totalSupply = 0; // initialize to 0; supply will grow due to rain
         numberOfRainees = 0;  // initialize to 0; no one has registered yet
+        precision = 8; // higher precision costs more gas
         maxSupply = _maxSupply;
         evaporationNumerator = _evaporationNumerator;
         evaporationDenominator = _evaporationDenominator;
@@ -183,6 +184,9 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     // number of addresses registered as rainees
     uint256 public numberOfRainees;
+
+    // number of times to run the calculateEvaporation algorithm
+    uint256 public precision;
     
 
     /*--------- Pluvo events ---------*/
@@ -244,6 +248,14 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         require(_secondsBetweenRainfalls > 0);
         rain();
         secondsBetweenRainfalls = _secondsBetweenRainfalls;
+    }
+
+    /// @notice Set the evaporation calculation precision
+    /// @notice 8 should be enough; lower costs less gas but is less precise
+    function setPrecision(uint256 _precision) 
+        public onlyBy(parameterSetter) {
+        require(precision > 2);
+        precision = _precision;
     }
     
     /// @notice Register an address as an available rainee.
@@ -416,7 +428,6 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             block.timestamp.sub(lastTime).div(secondsBetweenRainfalls);
 
         uint256 q = evaporationDenominator.div(evaporationNumerator);
-        uint256 precision = 8; // higher precision costs more gas
         uint256 maxEvaporation = 
             balance.sub( 
                 fractionalExponentiation(
