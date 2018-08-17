@@ -899,201 +899,224 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     });
   });
 
-  describe('fractionalExponentiation()', () => {
+  describe('fractionalExponentiation(); make the fractionalExponentiation function public to run these tests', () => {
 
-    let balance;
-    let rate;
-    let periods;
-    let precision;
+    // let balance;
+    // let rate;
+    // let periods;
+    // let precision;
 
-    async function fe() {
-      return await pluvo.fractionalExponentiation(balance, rate, periods, true, precision);
-    }
+    // async function fe() {
+    //   return await pluvo.fractionalExponentiation(balance, rate, periods, true, precision);
+    // }
 
-    async function feGas() {
-      return await pluvo.fractionalExponentiation.estimateGas(balance, rate, periods, true, precision);
-    }
+    // async function feGas() {
+    //   return await pluvo.fractionalExponentiation.estimateGas(balance, rate, periods, true, precision);
+    // }
 
-    beforeEach(async () => {
-      balance = 20;
-      rate = 10;
-      precision = 8;
+    // beforeEach(async () => {
+    //   balance = 20;
+    //   rate = 10;
+    //   precision = 8;
+    // });
+
+    // it('returns 0 if periods are too many', async () => {
+    //   periods = 50;
+    //   const result = await fe();
+    //   assert(result.eq(BigNumber(0)), `Result was ${result}, but it should have been 0`);
+    // });
+
+    // it('returns one tenth one period', async () => {
+    //   periods = 1;
+    //   const result = await fe();
+    //   assert(result.eq(BigNumber(18)), `Result was ${result}, but it should have been 18`);
+    // });
+
+    // it('returns one hundredth one period', async () => {
+    //   periods = 1;
+    //   balance = 100;
+    //   rate = 100;
+    //   const result = await fe();
+    //   assert(result.eq(BigNumber(99)), `Result was ${result}, but it should have been 99`);
+    // });
+
+    // it('returns one millionth after one period', async () => {
+    //   periods = 1;
+    //   balance = 1000000;
+    //   rate = 1000000;
+    //   const result = await fe();
+    //   assert(result.eq(BigNumber(999999)), `Result was ${result}, but it should have been 999999`);
+    // });
+
+    // it('returns one tenth after one hundred thousand periods', async () => {
+    //   periods = 100000;
+    //   balance = 1000;
+    //   rate = 1000000;
+    //   const result = await fe();
+    //   assert(result.eq(BigNumber(904)), `Result was ${result}, but it should have been 904`);
+    // });
+
+    // it('returns one billionth after one period', async () => {
+    //   periods = 1;
+    //   balance = 1000000000;
+    //   rate = 1000000000;
+    //   const result = await fe();
+    //   assert(result.eq(BigNumber(999999999)), `Result was ${result}, but it should have been 999999999`);
+    // });
+
+    // describe('precision checks', () => {
+
+    //   // adjust these parameters and watch output to see when it converges
+    //   beforeEach(async () => {
+    //     periods = 10;
+    //     balance = 100;
+    //     rate = 1000;
+    //   });
+
+    //   it('precision 1', async () => {
+    //     precision = 1;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 2', async () => {
+    //     precision = 2;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 3', async () => {
+    //     precision = 3;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 4', async () => {
+    //     precision = 4;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 5', async () => {
+    //     precision = 5;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 6', async () => {
+    //     precision = 6;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 7', async () => {
+    //     precision = 7;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 8', async () => {
+    //     precision = 8;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 9', async () => {
+    //     precision = 9;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 10', async () => {
+    //     precision = 10;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 11', async () => {
+    //     precision = 11;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+
+    //   it('precision 12', async () => {
+    //     precision = 12;
+    //     console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
+    //     assert(true);
+    //   });
+    // });
+  });
+
+  describe('evaporate(), make evaporate() public to run these tests', () => {
+
+    it('updates last evaporation time', async () => {
+      let lastEvapTime = (await pluvo.balances(owner))[1];
+      assert(lastEvapTime.eq(BigNumber(0)), `last evaporation time should be 0 but was actually ${lastEvapTime}`);
+      await pluvo.evaporate(owner);
+      lastEvapTime = (await pluvo.balances(owner))[1];
+      let now = web3.eth.getBlock('pending').timestamp;
+      assert(lastEvapTime.eq(now), `last evaporation time should be ${now} but was actually ${lastEvapTime}`);
+    });
+    
+    it('does not reduce balance when no time has elapsed', async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+      increaseTime(elapsedTime);
+      await pluvo.collect({ from: owner });
+      let rawBalance0 = (await pluvo.balances(owner))[0];
+      await pluvo.evaporate(owner);
+      let rawBalance1 = (await pluvo.balances(owner))[0];
+      assert(rawBalance0.eq(rawBalance1), `raw balance 0 of ${rawBalance0} should equal raw balance 1 of ${rawBalance1}`);
     });
 
-    it('returns 0 if periods are too many', async () => {
-      periods = 50;
-      const result = await fe();
-      assert(result.eq(BigNumber(0)), `Result was ${result}, but it should have been 0`);
-    });
+    it('reduces balance by same amount as calculateEvaporation() when evaporation is due', async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+      increaseTime(elapsedTime);
+      await pluvo.collect({ from: owner });
+      increaseTime(elapsedTime);
+      let rawBalance0 = (await pluvo.balances(owner))[0];
+      let pendingEvaporation = await pluvo.calculateEvaporation(owner);
+      await pluvo.evaporate(owner);
+      let rawBalance1 = (await pluvo.balances(owner))[0];
+      assert(rawBalance0.eq(rawBalance1.plus(pendingEvaporation)), `raw balance 0 of ${rawBalance0} should equal raw balance 1 of ${rawBalance1} plus pending evaporation of ${pendingEvaporation}`);
 
-    it('returns one tenth one period', async () => {
-      periods = 1;
-      const result = await fe();
-      assert(result.eq(BigNumber(18)), `Result was ${result}, but it should have been 18`);
-    });
-
-    it('returns one hundredth one period', async () => {
-      periods = 1;
-      balance = 100;
-      rate = 100;
-      const result = await fe();
-      assert(result.eq(BigNumber(99)), `Result was ${result}, but it should have been 99`);
-    });
-
-    it('returns one millionth after one period', async () => {
-      periods = 1;
-      balance = 1000000;
-      rate = 1000000;
-      const result = await fe();
-      assert(result.eq(BigNumber(999999)), `Result was ${result}, but it should have been 999999`);
-    });
-
-    it('returns one tenth after one hundred thousand periods', async () => {
-      periods = 100000;
-      balance = 1000;
-      rate = 1000000;
-      const result = await fe();
-      assert(result.eq(BigNumber(904)), `Result was ${result}, but it should have been 904`);
-    });
-
-    it('returns one billionth after one period', async () => {
-      periods = 1;
-      balance = 1000000000;
-      rate = 1000000000;
-      const result = await fe();
-      assert(result.eq(BigNumber(999999999)), `Result was ${result}, but it should have been 999999999`);
-    });
-
-    describe('precision checks', () => {
-
-      // adjust these parameters and watch output to see when it converges
-      beforeEach(async () => {
-        periods = 10;
-        balance = 100;
-        rate = 1000;
-      });
-
-      it('precision 1', async () => {
-        precision = 1;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 2', async () => {
-        precision = 2;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 3', async () => {
-        precision = 3;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 4', async () => {
-        precision = 4;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 5', async () => {
-        precision = 5;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 6', async () => {
-        precision = 6;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 7', async () => {
-        precision = 7;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 8', async () => {
-        precision = 8;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 9', async () => {
-        precision = 9;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 10', async () => {
-        precision = 10;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 11', async () => {
-        precision = 11;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
-
-      it('precision 12', async () => {
-        precision = 12;
-        console.log(`Precision ${precision}:  Gas was ${await feGas()} and result was ${await fe()}`);
-        assert(true);
-      });
+      increaseTime(elapsedTime*4);
+      rawBalance0 = (await pluvo.balances(owner))[0];
+      pendingEvaporation = await pluvo.calculateEvaporation(owner);
+      await pluvo.evaporate(owner);
+      rawBalance1 = (await pluvo.balances(owner))[0];
+      assert(rawBalance0.eq(rawBalance1.plus(pendingEvaporation)), `raw balance 0 of ${rawBalance0} should equal raw balance 1 of ${rawBalance1} plus pending evaporation of ${pendingEvaporation} after 4 periods`);
     });
   });
 
-  // describe('evaporate()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+  describe('lastRainTime()', () => {
 
-  // describe('lastRainTime()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    beforeEach(async () => {
+      await pluvo.registerAddress(owner, { from: owner });
+    });
 
-  // describe('rainees getter function', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    it('tells the time of the contract construction with no rain', async () => {
+      let contractTime = BigNumber(web3.eth.getBlock('latest').timestamp);
+      let lastRainTime = await pluvo.lastRainTime();
+      assert(lastRainTime.eq(contractTime), `lastRainTime is ${lastRainTime}, but it should equal the contract construction time ${contractTime}`);
+    });
 
-  // describe('rainfallPayouts getter function', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    it('rain() increases the last rain time', async () => {
+      increaseTime(elapsedTime);
+      let lastRainTime0 = await pluvo.lastRainTime();
+      await pluvo.rain();
+      let lastRainTime1 = await pluvo.lastRainTime();
+      assert(lastRainTime1.gt(lastRainTime0), `lastRainTime1 ${lastRainTime1}, should be greater than lastRainTime0 ${lastRainTime0}`);    
+    });
 
-  // describe('evaporationRate getter function', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
-
-  // describe('blocksBetweenRainfalls getter function', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
-
-  // describe('maxSupply getter function', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
-
-  // describe('numberOfRainees getter function', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    it('tells the time of the last rainfall payout after rain', async () => {
+      let contractTime = BigNumber(web3.eth.getBlock('latest').timestamp);
+      increaseTime(elapsedTime);
+      await pluvo.rain();
+      let lastBlockTime = contractTime.plus(BigNumber(elapsedTime));
+      let lastRainTime = await pluvo.lastRainTime();
+      assert(lastRainTime.eq(lastBlockTime), `lastRainTime is ${lastRainTime}, but it should equal the last block time ${lastBlockTime}. Compare with contract construction time of ${contractTime}`);    
+    });
+  });
 
   // describe('currentRainfallIndex()', () => {
   //   it('', async () => {
@@ -1114,6 +1137,12 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
   // });
 
   // describe('setRainfallFrequency()', () => {
+  //   it('', async () => {
+  //     assert(false, 'not implemented');
+  //   });
+  // });
+
+  // describe('setPrecision()', () => {
   //   it('', async () => {
   //     assert(false, 'not implemented');
   //   });
