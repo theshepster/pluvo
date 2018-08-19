@@ -92,13 +92,13 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     });
 
     it('should increase after rain collection', () => {
-      assert(balance0.gt(BigNumber(0)));
+      assert(balance0.gt(0));
     });
 
     it('should increase after receipt from transfer', async () => {
       await pluvo.transfer(recipient, 10, { from: owner });
       const recipientBalance = await pluvo.balanceOf(recipient);
-      assert(recipientBalance.gt(BigNumber(0)));
+      assert(recipientBalance.gt(0));
     });
 
     it('should decrease after sending coins', async () => {
@@ -142,7 +142,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     });
 
     it('should return 0 when all coins have evaporated', async () => {
-      assert(balance0.gt(BigNumber(0)), "Initial balance should be positive")
+      assert(balance0.gt(0), "Initial balance should be positive")
       increaseTime(elapsedTime*20); // enough time to evaporate all coins
       const balance = await pluvo.balanceOf(spender);
       assert(BigNumber(0).eq(balance));
@@ -171,13 +171,13 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       const ownerBalance = await pluvo.balanceOf(owner);
       const ownerRawBalance = BigNumber((await pluvo.balances(owner))[0]);
       assert(
-        ownerBalance.lt(BigNumber(amount)), 
+        ownerBalance.lt(amount), 
         `Update test parameters; test is only useful if ownerBalance
         (currently ${ownerBalance}) is less than amount to 
         send (${amount})`
       );
       assert(
-        ownerRawBalance.gt(BigNumber(amount)), 
+        ownerRawBalance.gt(amount), 
         `Update test parameters; test is only useful if ownerRawBalance
         (currently ${ownerRawBalance}) is greater than amount to 
         send (${amount})`
@@ -248,7 +248,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.transfer(to, amount, { from: owner });
       const recipientBalance1 = await pluvo.balanceOf(to);
       assert(
-        recipientBalance1.minus(BigNumber(amount)).eq(recipientBalance0),
+        recipientBalance1.minus(amount).eq(recipientBalance0),
         `recipientBalance0 is ${recipientBalance0}, 
         recipientBalance1 is ${recipientBalance1}, 
         amount to send is ${amount}`
@@ -262,7 +262,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.transfer(to, amount, { from: owner });
       const senderBalance1 = await pluvo.balanceOf(owner);
       assert(
-        senderBalance1.plus(BigNumber(amount)).eq(senderBalance0),
+        senderBalance1.plus(amount).eq(senderBalance0),
         `senderBalance0 is ${senderBalance0}, 
         senderBalance1 is ${senderBalance1}, 
         amount to send is ${amount}`
@@ -306,13 +306,13 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       const ownerBalance = await pluvo.balanceOf(owner);
       const ownerRawBalance = BigNumber((await pluvo.balances(owner))[0]);
       assert(
-        ownerBalance.lt(BigNumber(amount)), 
+        ownerBalance.lt(amount), 
         `Update test parameters; test is only useful if ownerBalance
         (currently ${ownerBalance}) is less than amount to 
         send (${amount})`
       );
       assert(
-        ownerRawBalance.gt(BigNumber(amount)), 
+        ownerRawBalance.gt(amount), 
         `Update test parameters; test is only useful if ownerRawBalance
         (currently ${ownerRawBalance}) is greater than amount to 
         send (${amount})`
@@ -328,13 +328,13 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       const ownerBalance = await pluvo.balanceOf(owner);
       const allowance = await pluvo.allowance(owner, spender);
       assert(
-        ownerBalance.gt(BigNumber(amount)), 
+        ownerBalance.gt(amount), 
         `Update test parameters; test is only useful if ownerBalance
         (currently ${ownerBalance}) is greater than amount to 
         send (${amount})`
       );
       assert(
-        allowance.lt(BigNumber(amount)), 
+        allowance.lt(amount), 
         `Update test parameters; test is only useful if allowance
         (currently ${ownerBalance}) is less than amount to 
         send (${amount})`
@@ -351,13 +351,13 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       const ownerBalance = await pluvo.balanceOf(owner);
       const allowance = await pluvo.allowance(owner, spender);
       assert(
-        ownerBalance.lt(BigNumber(amount)), 
+        ownerBalance.lt(amount), 
         `Update test parameters; test is only useful if ownerBalance
         (currently ${ownerBalance}) is less than amount to 
         send (${amount})`
       );
       assert(
-        allowance.gt(BigNumber(amount)), 
+        allowance.gt(amount), 
         `Update test parameters; test is only useful if allowance
         (currently ${ownerBalance}) is greater than amount to 
         send (${amount})`
@@ -430,7 +430,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.transferFrom(owner, to, amount, { from: spender });
       const recipientBalance1 = await pluvo.balanceOf(to);
       assert(
-        recipientBalance1.minus(BigNumber(amount)).eq(recipientBalance0),
+        recipientBalance1.minus(amount).eq(recipientBalance0),
         `recipientBalance0 is ${recipientBalance0}, 
         recipientBalance1 is ${recipientBalance1}, 
         amount to send is ${amount}`
@@ -444,7 +444,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.transferFrom(owner, to, amount, { from: spender });
       const senderBalance1 = await pluvo.balanceOf(owner);
       assert(
-        senderBalance1.plus(BigNumber(amount)).eq(senderBalance0),
+        senderBalance1.plus(amount).eq(senderBalance0),
         `senderBalance0 is ${senderBalance0}, 
         senderBalance1 is ${senderBalance1}, 
         amount to send is ${amount}`
@@ -457,7 +457,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.transferFrom(owner, to, amount, { from: spender });
       const allowance1 = await pluvo.allowance(owner, spender);
       assert(
-        allowance1.plus(BigNumber(amount)).eq(allowance0),
+        allowance1.plus(amount).eq(allowance0),
         `allowance0 is ${allowance0}, 
         allowance1 is ${allowance1}, 
         amount to send is ${amount}`
@@ -480,24 +480,24 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
   describe('registerAddress()', () => {
     it('registers registrar sent by registrar', async () => {
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        (await pluvo.numberOfRainees()).eq(0),
         "New Pluvo should start with zero rainees"
       );
       await pluvo.registerAddress(owner, { from: owner });
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        (await pluvo.numberOfRainees()).eq(1),
         "Registering address should increase numberOfRainees by 1"
       );
     });
 
     it('does another address sent by registrar', async () => {
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        (await pluvo.numberOfRainees()).eq(0),
         "New Pluvo should start with zero rainees"
       );
       await pluvo.registerAddress(recipient, { from: owner });
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        (await pluvo.numberOfRainees()).eq(1),
         "Registering address should increase numberOfRainees by 1"
       );
     });
@@ -505,20 +505,20 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     it('should revert if not called by registrar', async () => {
       await assertRevert(pluvo.registerAddress(owner, { from: recipient }));
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        (await pluvo.numberOfRainees()).eq(0),
         "There should still be no addresses registered"
       );
     });
 
     it('does not register an address twice', async () => {
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        (await pluvo.numberOfRainees()).eq(0),
         "New Pluvo should start with zero rainees"
       );
       await pluvo.registerAddress(owner, { from: owner });
       await pluvo.registerAddress(owner, { from: owner });
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        (await pluvo.numberOfRainees()).eq(1),
         "Registering address twice should only increase rainees once"
       );
     });
@@ -531,24 +531,24 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
 
     it('should unregister a registered address', async () => {
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        (await pluvo.numberOfRainees()).eq(1),
         "There should have been one address registered"
       );
       await pluvo.unregisterAddress(owner, { from: owner });
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(0)),
+        (await pluvo.numberOfRainees()).eq(0),
         "There should be no more rainees after unregistration"
       );
     });
 
     it('should not unregister an unregistered address', async () => {
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        (await pluvo.numberOfRainees()).eq(1),
         "There should have been one address registered"
       );
       await pluvo.unregisterAddress(spender, { from: owner });
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        (await pluvo.numberOfRainees()).eq(1),
         "There should stil be one person registered"
       );
     });
@@ -556,7 +556,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     it('should revert if not called by registrar', async () => {
       await assertRevert(pluvo.unregisterAddress(owner, { from: recipient }));
       assert(
-        (await pluvo.numberOfRainees()).eq(BigNumber(1)),
+        (await pluvo.numberOfRainees()).eq(1),
         "There should still be one address registered"
       );
     });
@@ -576,7 +576,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       const amount = 12;
       await pluvo.approve(spender, amount, { from: owner });
       const allowance = await pluvo.allowance(owner, spender);
-      assert(allowance.eq(BigNumber(amount)));
+      assert(allowance.eq(amount));
     });
 
     it('approve() allows tranferFrom() to occur', async () => {
@@ -588,7 +588,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.approve(spender, amount, { from: owner });
       pluvo.transferFrom(owner, to, amount, { from: spender });
       const recipientBalance = await pluvo.balanceOf(recipient);
-      assert(recipientBalance.eq(BigNumber(amount)));
+      assert(recipientBalance.eq(amount));
     });
   });
 
@@ -646,7 +646,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.registerAddress(owner, { from: owner });
       increaseTime(elapsedTime*2);
       const { logs } = await pluvo.collect({ from: owner }); // rains twice
-      assert(logs[0].args.amount.lt(oneCollection.times(BigNumber(2))), `Should have collected less than twice rainfall per person due to evaporation of the first rain. Collected ${logs[0].args.amount}.`);
+      assert(logs[0].args.amount.lt(oneCollection.times(2)), `Should have collected less than twice rainfall per person due to evaporation of the first rain. Collected ${logs[0].args.amount}.`);
     });
 
     it('evaporates from address after collection', async () => {
@@ -656,7 +656,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.collect({ from: owner }); // rains
       const rawBalance = BigNumber((await pluvo.balances(owner))[0]);
-      assert(rawBalance.lt(oneCollection.times(BigNumber(2))), `Should have evaporated after the second collection. Raw balance was ${rawBalance}.`);
+      assert(rawBalance.lt(oneCollection.times(2)), `Should have evaporated after the second collection. Raw balance was ${rawBalance}.`);
     });
 
     it('increases total supply', async () => {
@@ -715,7 +715,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.rain();
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains twice if two periods have passed', async () => {
@@ -724,7 +724,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime*2);
       await pluvo.rain();
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(2)), `RainfallIndex1 = ${rainfallIndex1}, it should be two more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(2), `RainfallIndex1 = ${rainfallIndex1}, it should be two more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains 18 times if 18 periods have passed', async () => {
@@ -733,7 +733,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime*18);
       await pluvo.rain();
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(18)), `RainfallIndex1 = ${rainfallIndex1}, it should be 18 more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(18), `RainfallIndex1 = ${rainfallIndex1}, it should be 18 more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains during setEvaporationRate()', async () => {
@@ -742,7 +742,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.setEvaporationRate(2,7); // should rain
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains during setRainfallPeriod()', async () => {
@@ -751,7 +751,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.setRainfallPeriod(27); // should rain
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
     
     it('rains during registerAddress()', async () => {
@@ -760,7 +760,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.registerAddress(recipient, { from: owner }); // should rain
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains during unregisterAddress()', async () => {
@@ -769,7 +769,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.unregisterAddress(owner, { from: owner }); // should rain
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains during collect()', async () => {
@@ -778,7 +778,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.collect(); // should rain
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains during collectRainfalls()', async () => {
@@ -787,7 +787,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.collectRainfalls(1); // should rain
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
   });
 
@@ -849,7 +849,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime);
       await pluvo.rainOnce();
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('rains exactly once if multiple periods have passed', async () => {
@@ -857,7 +857,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       increaseTime(elapsedTime*4);
       await pluvo.rainOnce();
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('prevents rain() from raining again', async () => {
@@ -866,7 +866,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.rainOnce();
       await pluvo.rain(); // should not rain
       const rainfallIndex1 = await pluvo.currentRainfallIndex();
-      assert(rainfallIndex1.minus(rainfallIndex0).eq(BigNumber(1)), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
+      assert(rainfallIndex1.minus(rainfallIndex0).eq(1), `RainfallIndex1 = ${rainfallIndex1}, it should be one more than RainfallIndex0 = ${rainfallIndex0}`);
     });
 
     it('pushes the right amount onto the rainfallPayouts array', async () => {
@@ -895,7 +895,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.setEvaporationRate(0,5);
       increaseTime(elapsedTime*5);
       const evaporated = await pluvo.calculateEvaporation(owner);
-      assert(evaporated.eq(BigNumber(0)), `Evaporated ${evaporated}, but should have evaporated 0`);
+      assert(evaporated.eq(0), `Evaporated ${evaporated}, but should have evaporated 0`);
     });
   });
 
@@ -923,13 +923,13 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     // it('returns 0 if periods are too many', async () => {
     //   periods = 50;
     //   const result = await fe();
-    //   assert(result.eq(BigNumber(0)), `Result was ${result}, but it should have been 0`);
+    //   assert(result.eq(0), `Result was ${result}, but it should have been 0`);
     // });
 
     // it('returns one tenth one period', async () => {
     //   periods = 1;
     //   const result = await fe();
-    //   assert(result.eq(BigNumber(18)), `Result was ${result}, but it should have been 18`);
+    //   assert(result.eq(18), `Result was ${result}, but it should have been 18`);
     // });
 
     // it('returns one hundredth one period', async () => {
@@ -937,7 +937,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     //   balance = 100;
     //   rate = 100;
     //   const result = await fe();
-    //   assert(result.eq(BigNumber(99)), `Result was ${result}, but it should have been 99`);
+    //   assert(result.eq(99), `Result was ${result}, but it should have been 99`);
     // });
 
     // it('returns one millionth after one period', async () => {
@@ -945,7 +945,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     //   balance = 1000000;
     //   rate = 1000000;
     //   const result = await fe();
-    //   assert(result.eq(BigNumber(999999)), `Result was ${result}, but it should have been 999999`);
+    //   assert(result.eq(999999), `Result was ${result}, but it should have been 999999`);
     // });
 
     // it('returns one tenth after one hundred thousand periods', async () => {
@@ -953,7 +953,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     //   balance = 1000;
     //   rate = 1000000;
     //   const result = await fe();
-    //   assert(result.eq(BigNumber(904)), `Result was ${result}, but it should have been 904`);
+    //   assert(result.eq(904), `Result was ${result}, but it should have been 904`);
     // });
 
     // it('returns one billionth after one period', async () => {
@@ -961,7 +961,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     //   balance = 1000000000;
     //   rate = 1000000000;
     //   const result = await fe();
-    //   assert(result.eq(BigNumber(999999999)), `Result was ${result}, but it should have been 999999999`);
+    //   assert(result.eq(999999999), `Result was ${result}, but it should have been 999999999`);
     // });
 
     // describe('precision checks', () => {
@@ -1051,7 +1051,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
 
     it('updates last evaporation time', async () => {
       let lastEvapTime = (await pluvo.balances(owner))[1];
-      assert(lastEvapTime.eq(BigNumber(0)), `last evaporation time should be 0 but was actually ${lastEvapTime}`);
+      assert(lastEvapTime.eq(0), `last evaporation time should be 0 but was actually ${lastEvapTime}`);
       await pluvo.evaporate(owner);
       lastEvapTime = (await pluvo.balances(owner))[1];
       let now = web3.eth.getBlock('pending').timestamp;
@@ -1114,51 +1114,166 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
       await pluvo.rain();
       let lastBlockTime = contractTime.plus(BigNumber(elapsedTime));
       let lastRainTime = await pluvo.lastRainTime();
-      assert(lastRainTime.eq(lastBlockTime), `lastRainTime is ${lastRainTime}, but it should equal the last block time ${lastBlockTime}. Compare with contract construction time of ${contractTime}`);    
+      assert(lastRainTime.minus(lastBlockTime).abs().lte(1), `lastRainTime is ${lastRainTime}, but it should equal the last block time ${lastBlockTime}. Compare with contract construction time of ${contractTime}`);    
     });
   });
 
-  // describe('currentRainfallIndex()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+  describe('currentRainfallIndex()', () => {
+    it('starts out saying 1', async () => {
+      const rfi = await pluvo.currentRainfallIndex();
+      assert(rfi.eq(1), `rainfall index is ${rfi}, should be 1`);
+    });
 
-  // describe('rainPerRainfallPerPerson()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    it('increases to 2 after the first rainfall', async () => {
+      await pluvo.registerAddress(owner);
+      increaseTime(elapsedTime);
+      await pluvo.rain();
+      const rfi = await pluvo.currentRainfallIndex();
+      assert(rfi.eq(2), `rainfall index is ${rfi}, should be 2`);
+    });
 
-  // describe('setEvaporationRate()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    it('increases to 5 after the four rainfalls', async () => {
+      await pluvo.registerAddress(owner);
+      increaseTime(elapsedTime*4);
+      await pluvo.rain();
+      const rfi = await pluvo.currentRainfallIndex();
+      assert(rfi.eq(5), `rainfall index is ${rfi}, should be 5`);
+    });
+  });
 
-  // describe('setRainfallFrequency()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+  describe('rainPerRainfallPerPerson()', () => {
+    it('reverts if there are no registered recipients', async () => {
+      await assertRevert(pluvo.rainPerRainfallPerPerson());
+    });
 
-  // describe('setPrecision()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    it('equals 0 if the evaporation numerator is 0', async () => {
+      await pluvo.setEvaporationRate(0, 4);
+      await pluvo.registerAddress(owner);
+      const rpp = await pluvo.rainPerRainfallPerPerson();
+      assert(rpp.eq(0), `should be 0, but is ${rpp}`);
+    });
 
-  // describe('changeParameterSetter()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+    it('equals maxSupply * num / denom / numRainees', async () => {
+      await pluvo.registerAddress(owner);
+      await pluvo.registerAddress(recipient);
+      await pluvo.registerAddress(spender);
+      const ms = BigNumber(await pluvo.maxSupply());
+      const num = await pluvo.evaporationNumerator();
+      const denom = await pluvo.evaporationDenominator();
+      const rainees = await pluvo.numberOfRainees();
+      const rpp = await pluvo.rainPerRainfallPerPerson();
+      const should = ms.times(num).idiv(denom).idiv(rainees);
+      assert(should.eq(rpp), `should be ${should}, but is ${rpp}`);
+    });
+  });
 
-  // describe('changeRegistrar()', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+  describe('setEvaporationRate()', () => {
+    it('reverts if denom is less than num', async () => {
+      await assertRevert(pluvo.setEvaporationRate(6,4));
+    });
+
+    it('reverts if denom is 0', async () => {
+      await assertRevert(pluvo.setEvaporationRate(0,0));
+    });
+
+    it('reverts if submitted by non-parameterSetter', async () => {
+      await assertRevert(pluvo.setEvaporationRate(10,11, { from: spender }));
+    });
+
+    it('causes rain', async () => {
+      await pluvo.registerAddress(owner);
+      increaseTime(elapsedTime);
+      const index0 = await pluvo.currentRainfallIndex();
+      await pluvo.setEvaporationRate(1,1);
+      const index1 = await pluvo.currentRainfallIndex();
+      assert(index1.minus(index0).eq(1), `rainfallIndex1 ${index1} should be 1 more than rainfallIndex0 ${index0}`);
+    });
+
+    it('updates the numerator', async () => {
+      await pluvo.setEvaporationRate(25,27);
+      const num = await pluvo.evaporationNumerator();
+      assert(num.eq(25), `numerator was ${num}, should be 25`);
+    });
+
+    it('updates the denominator', async () => {
+      await pluvo.setEvaporationRate(25,27);
+      const denom = await pluvo.evaporationDenominator();
+      assert(denom.eq(27), `numerator was ${denom}, should be 27`);
+    });
+  });
+
+  describe('setRainfallPeriod()', () => {
+    it('reverts if period is 0', async () => {
+      await assertRevert(pluvo.setRainfallPeriod(0));
+    });
+
+    it('reverts if called by non-parameterSetter', async () => {
+      await assertRevert(pluvo.setRainfallPeriod(44, { from: spender }));
+    });
+
+    it('causes rain', async () => {
+      await pluvo.registerAddress(owner);
+      increaseTime(elapsedTime);
+      const index0 = await pluvo.currentRainfallIndex();
+      await pluvo.setRainfallPeriod(145);
+      const index1 = await pluvo.currentRainfallIndex();
+      assert(index1.minus(index0).eq(1), `rainfallIndex1 ${index1} should be 1 more than rainfallIndex0 ${index0}`);
+    });
+
+    it('updates the seconds between rainfalls', async () => {
+      await pluvo.setRainfallPeriod(145);
+      const rp = await pluvo.secondsBetweenRainfalls();
+      assert(rp.eq(145), `seconds was ${rp}, should be 145`);
+    });
+  });
+
+  describe('setPrecision()', () => {
+    it('reverts if precision is 0', async () => {
+      await assertRevert(pluvo.setPrecision(0));
+    });
+
+    it('reverts if precision is 1', async () => {
+      await assertRevert(pluvo.setPrecision(1));
+    });
+
+    it('reverts if precision is 2', async () => {
+      await assertRevert(pluvo.setPrecision(2));
+    });
+
+    it('reverts if set by non-parameterSetter', async () => {
+      await assertRevert(pluvo.setPrecision(7, { from: spender }));
+    });
+
+    it('updates precision', async () => {
+      await pluvo.setPrecision(6);
+      const prec = await pluvo.precision();
+      assert(prec.eq(6), `seconds was ${prec}, should be 6`);
+    });
+  });
+
+  describe('changeParameterSetter()', () => {
+    it('reverts if set by non-parameterSetter', async () => {
+      await assertRevert(pluvo.changeParameterSetter(spender, { from: spender }));
+    });
+
+    it('updates parameterSetter', async () => {
+      await pluvo.changeParameterSetter(spender);
+      const ps = await pluvo.parameterSetter();
+      assert.equal(ps, spender);
+    });
+  });
+
+  describe('changeRegistrar()', () => {
+    it('reverts if set by non-registrar', async () => {
+      await assertRevert(pluvo.changeRegistrar(spender, { from: spender }));
+    });
+
+    it('updates registrar', async () => {
+      await pluvo.changeRegistrar(spender);
+      const ps = await pluvo.registrar();
+      assert.equal(ps, spender);
+    });
+  });
 
   // describe('when contracted is first constructed', () => {
   //   it('', async () => {
