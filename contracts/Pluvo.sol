@@ -254,7 +254,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @notice 8 should be enough; lower costs less gas but is less precise
     function setPrecision(uint256 _precision) 
         public onlyBy(parameterSetter) {
-        require(precision > 2);
+        require(_precision > 2);
         precision = _precision;
     }
     
