@@ -28,17 +28,18 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     constructor (
         uint256 _maxSupply,
-        uint256 _evaporationRate,
+        uint256 _evaporationNumerator,
         uint256 _evaporationDenominator,
         uint256 _secondsBetweenRainfalls
     ) public {
-        require(_evaporationDenominator >= _evaporationRate);
+        require(_evaporationDenominator >= _evaporationNumerator);
         require(_evaporationDenominator > 0);
         require(_maxSupply > 0);
         totalSupply = 0; // initialize to 0; supply will grow due to rain
         numberOfRainees = 0;  // initialize to 0; no one has registered yet
+        precision = 8; // higher precision costs more gas
         maxSupply = _maxSupply;
-        evaporationRate = _evaporationRate;
+        evaporationNumerator = _evaporationNumerator;
         evaporationDenominator = _evaporationDenominator;
         secondsBetweenRainfalls = _secondsBetweenRainfalls;
         rainfallPayouts.push(Rain(0, block.timestamp));
@@ -171,8 +172,8 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     // stores payout amount and time for each rainfall
     Rain[] public rainfallPayouts;
     
-    // evaporationRate coins per evaporationDenominator evaporate per rainfall
-    uint256 public evaporationRate; 
+    // evaporationNumerator coins per evaporationDenominator evaporate per rainfall
+    uint256 public evaporationNumerator; 
     uint256 public evaporationDenominator;
     
     // number of seconds between rainfall payouts
@@ -183,6 +184,9 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     
     // number of addresses registered as rainees
     uint256 public numberOfRainees;
+
+    // number of times to run the calculateEvaporation algorithm
+    uint256 public precision;
     
 
     /*--------- Pluvo events ---------*/
@@ -218,7 +222,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         require(numberOfRainees > 0);
         return 
             maxSupply
-            .mul(evaporationRate)
+            .mul(evaporationNumerator)
             .div(evaporationDenominator)
             .div(numberOfRainees);
     }
@@ -226,13 +230,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @notice Set the evaporation rate numerator and denominator.
     /// @return True if evaporation rate was updated; false otherwise.
     function setEvaporationRate(
-        uint256 _evaporationRate,
+        uint256 _evaporationNumerator,
         uint256 _evaporationDenominator
     ) public onlyBy(parameterSetter) {
-        require(_evaporationDenominator >= _evaporationRate);
+        require(_evaporationDenominator >= _evaporationNumerator);
         require(_evaporationDenominator > 0);
         rain();
-        evaporationRate = _evaporationRate;
+        evaporationNumerator = _evaporationNumerator;
         evaporationDenominator = _evaporationDenominator;
     }
     
@@ -244,6 +248,14 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         require(_secondsBetweenRainfalls > 0);
         rain();
         secondsBetweenRainfalls = _secondsBetweenRainfalls;
+    }
+
+    /// @notice Set the evaporation calculation precision
+    /// @notice 8 should be enough; lower costs less gas but is less precise
+    function setPrecision(uint256 _precision) 
+        public onlyBy(parameterSetter) {
+        require(_precision > 2);
+        precision = _precision;
     }
     
     /// @notice Register an address as an available rainee.
@@ -362,27 +374,39 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         return collectRainfalls(MAX_UINT256);
     }
 
+    /// @notice Calculate number of rainfalls due if rain() gets called
+    /// @return rainfallsDue Number of rainfalls due in next rain()
+    function rainfallsDue() public view returns (uint256) {
+        return block.timestamp.sub(lastRainTime()).div(secondsBetweenRainfalls);
+    }
+
+    /// @notice Store one rainfall payout, without error checking
+    function rainOnceForce() private {
+        rainfallPayouts.push(
+            Rain(
+                rainPerRainfallPerPerson(), 
+                secondsBetweenRainfalls.add(lastRainTime())
+            )
+        );
+    }
+
+    /// @notice Store one rainfall payout.
+    /// @notice Addresses can call this function to store one rainfall payout
+    /// if calling rain() would cost too much gas (e.g., if it has been many
+    /// periods since the last rainfall)
+    function rainOnce() public {
+        if (numberOfRainees > 0 && rainfallsDue() > 0)
+            rainOnceForce();
+    }
+
     /// @notice Store rainfall payout(s) due since last rainfall.
     /// @notice If multiple rainfalls should have occurred, store the rain 
     /// from each of them.
-    /// @return True if enough time had elapsed since last rainfall.
-    function rain() public returns (uint256 rainfallsDue) {
+    function rain() public {
         if (numberOfRainees > 0) {
-            rainfallsDue =
-                block.timestamp
-                .sub(lastRainTime())
-                .div(secondsBetweenRainfalls);
-    
-            // store per-person rainfall amount.
-            // note that lastRainTime() updates after each push
-            for (uint256 i = 1; i <= rainfallsDue; i++) {
-                rainfallPayouts.push(
-                    Rain(
-                        rainPerRainfallPerPerson(), 
-                        secondsBetweenRainfalls.add(lastRainTime())
-                    )
-                );
-            }
+            uint256 maxRainfalls = rainfallsDue();
+            for (uint256 i = 1; i <= maxRainfalls; i++)
+                rainOnceForce();
         }
     }
     
@@ -397,14 +421,13 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
         uint256 lastTime
     ) private view returns (uint256) {
         require(block.timestamp >= lastTime);
-        if (evaporationRate == 0)
+        if (evaporationNumerator == 0)
             return 0;
         
         uint256 elapsedEvaporations = 
             block.timestamp.sub(lastTime).div(secondsBetweenRainfalls);
 
-        uint256 q = evaporationDenominator.div(evaporationRate);
-        uint256 precision = 8; // higher precision costs more gas
+        uint256 q = evaporationDenominator.div(evaporationNumerator);
         uint256 maxEvaporation = 
             balance.sub( 
                 fractionalExponentiation(
@@ -462,7 +485,7 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
     /// @notice Computes `k * (1-1/q) ^ n`, with precision `p`, for b = true
     /// @notice Small values of p get a close approimation
     /// @param k coefficient
-    /// @param q divisor (e.g., for 1.02^n, q = 100)
+    /// @param q divisor (e.g., for 1.02^n, q = 50)
     /// @param n exponent
     /// @param b negative toggle (e.g., b = true for 0.99^n,
     /// b = false for 1.01^n)
@@ -483,7 +506,10 @@ contract Pluvo is DetailedERC20("Pluvo", "PLV", 18) {
             N = N * (n-i);
             B = B * (i+1);
         }
-        return s;
+        if (s > k)
+            return 0;
+        else
+            return s;
     }
     
     // TODO: DELETE THIS FOR PRODUCTION
