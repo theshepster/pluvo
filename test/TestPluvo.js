@@ -793,7 +793,7 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
 
   describe('reasonable gas costs', () => {
 
-    const maxGas = 150000;
+    const maxGas = 160000;
 
     beforeEach(async () => {
       await pluvo.registerAddress(owner, { from: owner });
@@ -1275,10 +1275,102 @@ contract('Pluvo', async ([owner, recipient, spender]) => {
     });
   });
 
-  // describe('when contracted is first constructed', () => {
-  //   it('', async () => {
-  //     assert(false, 'not implemented');
-  //   });
-  // });
+  describe('when contract is first constructed', () => {
+    let maxSupply;
+    let numerator;
+    let denominator;
+    let elapsedTime;
+
+    beforeEach(() => {
+      maxSupply = 100;
+      numerator = 1;
+      denominator = 4;
+      elapsedTime = 100;
+    });
+
+    it('fails if evaporation denom is less than num', async () => {
+      numerator = 2;
+      denominator = 1;
+      await assertRevert(
+        Pluvo.new(maxSupply, numerator, denominator, elapsedTime)
+      );
+    });
+
+    it('fails if evaporation denom is 0', async () => {
+      numerator = 0;
+      denominator = 0;
+      await assertRevert(
+        Pluvo.new(maxSupply, numerator, denominator, elapsedTime)
+      );
+    });
+
+    it('fails if max supply is 0', async () => {
+      maxSupply = 0;
+      await assertRevert(
+        Pluvo.new(maxSupply, numerator, denominator, elapsedTime)
+      );
+    });
+
+    it('sets total supply to 0', async () => {
+      let ts = await pluvo.totalSupply();
+      assert.equal(ts, 0, `total supply should be 0, but is actually ${ts}`); 
+    });
+
+    it('sets rainees to 0', async () => {
+      let s = await pluvo.numberOfRainees();
+      assert.equal(s, 0, `total supply should be 0, but is actually ${s}`);
+    });
+
+    it('sets precision to 8', async () => {
+      let s = await pluvo.precision();
+      assert.equal(s, 8, `precision should be 8, but is actually ${s}`);    
+    });
+
+    it('sets max supply appropriately', async () => {
+      let s = await pluvo.maxSupply();
+      assert.equal(s, maxSupply, `max supply should be ${maxSupply}, but is actually ${s}`);
+    });
+
+    it('sets evapNum', async () => {
+      let s = await pluvo.evaporationNumerator();
+      assert.equal(s, numerator, `evaporationNum should be ${numerator}, but is actually ${s}`);
+    });
+
+    it('sets evapDenom', async () => {
+      let s = await pluvo.evaporationDenominator();
+      assert.equal(s, denominator, `evapDenom should be ${denominator}, but is actually ${s}`);
+    });
+
+    it('sets seconds between rainfalls', async () => {
+      let s = await pluvo.secondsBetweenRainfalls();
+      assert.equal(s, elapsedTime, `seconds should be ${elapsedTime}, but is actually ${s}`);
+    });
+
+    it('pushes a rainfall', async () => {
+      let s = await pluvo.currentRainfallIndex();
+      assert.equal(s, 1, `rainfalls should be 1, but is actually ${s}`);;
+    });
+
+    it('pushes a rainfall with 0 coins', async () => {
+      let s = (await pluvo.rainfallPayouts(0))[0];
+      assert.equal(s, 0);
+    });
+
+    it('pushes a rainfall with current timestamp', async () => {
+      let s = (await pluvo.rainfallPayouts(0))[1];
+      let now = web3.eth.getBlock('pending').timestamp;
+      assert.equal(s, now);
+    });
+
+    it('sets parameterSetter as message sender', async () => {
+      let s = await pluvo.parameterSetter();
+      assert.equal(s, owner);
+    });
+
+    it('sets registrar as message sender', async () => {
+      let s = await pluvo.registrar();
+      assert.equal(s, owner);
+    });
+  });
 
 });

@@ -296,8 +296,8 @@
           }
         ],
         "contractDependencies": [
-          1291,
-          1259
+          1259,
+          1291
         ],
         "contractKind": "contract",
         "documentation": "@title DetailedERC20 token\n@dev The decimals are only for visualization purposes.\nAll the operations are done using the smallest and indivisible token unit,\njust as on Ethereum all the operations are done in wei.",
@@ -702,8 +702,8 @@
           }
         ],
         "contractDependencies": [
-          1291,
-          1259
+          1259,
+          1291
         ],
         "contractKind": "contract",
         "documentation": "@title DetailedERC20 token\n@dev The decimals are only for visualization purposes.\nAll the operations are done using the smallest and indivisible token unit,\njust as on Ethereum all the operations are done in wei.",
@@ -1060,5 +1060,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.1",
-  "updatedAt": "2018-08-14T02:54:59.674Z"
+  "updatedAt": "2018-08-15T11:46:54.698Z"
 }
