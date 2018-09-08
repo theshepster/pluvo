@@ -21,7 +21,7 @@ class Parameters extends Component {
 
             <p><strong>Max Supply</strong>: <ContractData contract="Pluvo" method="maxSupply" /> {symbol}</p>
 
-            <p><strong>Evaporation Rate</strong>: <ContractData contract="Pluvo" method="evaporationRate" /> / <ContractData contract="Pluvo" method="evaporationDenominator" /> every <ContractData contract="Pluvo" method="secondsBetweenRainfalls" /> seconds</p>
+            <p><strong>Evaporation Rate</strong>: <ContractData contract="Pluvo" method="evaporationNumerator" /> / <ContractData contract="Pluvo" method="evaporationDenominator" /> every <ContractData contract="Pluvo" method="secondsBetweenRainfalls" /> seconds</p>
 
             <p><strong>Parameter Setter</strong>: {parameterSetter}</p>
 
